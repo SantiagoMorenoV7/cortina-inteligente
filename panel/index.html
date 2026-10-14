@@ -186,9 +186,9 @@
 
     <div class="tarjeta indicadores">
       <div class="indicador">
-        <div class="etiqueta">Luz</div>
+        <div class="etiqueta">Luz (lux estimados)</div>
         <div class="valor" id="vLuz">—</div>
-        <div class="nota">Baja con ≥ 60 % · sube con ≤ 40 %</div>
+        <div class="nota">Baja con ≥ 300 lux · sube con ≤ 100 lux</div>
       </div>
       <div class="indicador">
         <div class="etiqueta">Lectura del sensor (raw)</div>
@@ -204,9 +204,9 @@
   </section>
 
   <section class="tarjeta fila">
-    <h2>Luz, últimos 2 minutos (%)</h2>
+    <h2>Luz, últimos 2 minutos (lux, escala logarítmica)</h2>
     <div class="grafica-caja" id="graficaCaja">
-      <canvas id="grafica" role="img" aria-label="Gráfica de la luz en el tiempo"></canvas>
+      <canvas id="grafica" role="img" aria-label="Gráfica de los lux en el tiempo"></canvas>
       <div class="tooltip" id="tooltip" hidden></div>
     </div>
   </section>
@@ -215,7 +215,7 @@
     <div class="tarjeta">
       <h2>Últimas lecturas</h2>
       <table>
-        <thead><tr><th>Hora</th><th>Raw</th><th>Luz</th><th>Cortina</th></tr></thead>
+        <thead><tr><th>Hora</th><th>Raw</th><th>Lux</th><th>Cortina</th></tr></thead>
         <tbody id="tabla"></tbody>
       </table>
       <p class="vacio" id="tablaVacia">Aún no hay lecturas.</p>
@@ -233,9 +233,11 @@
 </main>
 
 <script>
-  // Deben coincidir con LUZ_PARA_BAJAR / LUZ_PARA_SUBIR de src/main.cpp
-  const UMBRAL_BAJAR = 60;
-  const UMBRAL_SUBIR = 40;
+  // Deben coincidir con LUX_PARA_BAJAR / LUX_PARA_SUBIR de src/main.cpp
+  const UMBRAL_BAJAR = 300;
+  const UMBRAL_SUBIR = 100;
+  const LUX_MIN_ESCALA = 1;      // piso de la escala logarítmica
+  const LUX_MAX_ESCALA = 10000;  // techo de la escala logarítmica
   const VENTANA_MS = 120000;
   const MAX_PUNTOS = 600;
   const BAUDIOS = 115200;
@@ -245,8 +247,15 @@
   let hover = null;
   let geo = null;
 
+  // Posición 0-1 de un valor de lux dentro de la escala logarítmica del panel.
+  function fraccionLux(lux) {
+    const acotado = Math.min(LUX_MAX_ESCALA, Math.max(LUX_MIN_ESCALA, lux));
+    return (Math.log10(acotado) - Math.log10(LUX_MIN_ESCALA)) /
+           (Math.log10(LUX_MAX_ESCALA) - Math.log10(LUX_MIN_ESCALA));
+  }
+
   // ---------- Entrada de datos ----------
-  const RE_LECTURA = /raw:\s*(\d+)\s*\|\s*luz:\s*(\d+)%\s*\|\s*cortina:\s*(ABAJO|ARRIBA)\s*\((-?\d+)/;
+  const RE_LECTURA = /raw:\s*(\d+)\s*\|\s*lux:\s*([\d.]+)\s*\|\s*cortina:\s*(ABAJO|ARRIBA)\s*\((-?\d+)/;
 
   function procesarLinea(linea) {
     linea = linea.trim();
@@ -254,7 +263,7 @@
     const m = RE_LECTURA.exec(linea);
     if (m) {
       agregarLectura({
-        t: Date.now(), raw: +m[1], luz: +m[2], abajo: m[3] === "ABAJO", ang: +m[4],
+        t: Date.now(), raw: +m[1], lux: +m[2], abajo: m[3] === "ABAJO", ang: +m[4],
       });
     } else if (linea.startsWith(">>>")) {
       registrarEvento(linea.replace(/^>>>\s*/, ""), true);
@@ -283,9 +292,10 @@
 
   // ---------- Vista ----------
   const hora = (t) => new Date(t).toLocaleTimeString("es", { hour12: false });
+  const formatoLux = (lux) => (lux >= 1000 ? (lux / 1000).toFixed(1) + "k" : Math.round(lux)) + " lux";
 
   function actualizarIndicadores(l) {
-    $("vLuz").textContent = l.luz + " %";
+    $("vLuz").textContent = formatoLux(l.lux);
     $("vRaw").textContent = l.raw;
     $("vCortina").textContent = l.abajo ? "▼ Abajo" : "▲ Arriba";
     $("vAngulo").textContent = "Servo a " + l.ang + "°";
@@ -298,9 +308,10 @@
   }
 
   function actualizarCortina(l) {
+    const f = fraccionLux(l.lux);
     $("cortina").style.height = Math.max(0, Math.min(100, (l.ang / 180) * 100)) + "%";
-    $("cielo").style.background = mezclar(css("--sky-low"), css("--sky-high"), l.luz / 100);
-    $("sol").style.opacity = Math.max(0, (l.luz - 30) / 70);
+    $("cielo").style.background = mezclar(css("--sky-low"), css("--sky-high"), f);
+    $("sol").style.opacity = Math.max(0, (f - 0.3) / 0.7);
     const leyenda = $("leyendaCortina");
     leyenda.replaceChildren(
       document.createTextNode(l.abajo ? "Cortina abajo " : "Cortina arriba "),
@@ -311,7 +322,7 @@
   function actualizarTabla() {
     const filas = datos.slice(-8).reverse().map((d) => {
       const tr = document.createElement("tr");
-      [hora(d.t), d.raw, d.luz + " %", d.abajo ? "Abajo" : "Arriba"].forEach((v) => {
+      [hora(d.t), d.raw, formatoLux(d.lux), d.abajo ? "Abajo" : "Arriba"].forEach((v) => {
         const td = document.createElement("td");
         td.textContent = v;
         tr.appendChild(td);
@@ -372,19 +383,19 @@
     const fin = datos.length ? datos[datos.length - 1].t : Date.now();
     const inicio = fin - VENTANA_MS;
     const x = (t) => m.l + ((t - inicio) / VENTANA_MS) * pw;
-    const y = (v) => m.t + (1 - v / 100) * ph;
+    const y = (v) => m.t + (1 - fraccionLux(v)) * ph;
     ctx.font = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.lineWidth = 1;
 
-    // Rejilla y ejes
+    // Rejilla y ejes (escala logarítmica: una línea por década)
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    [0, 25, 50, 75, 100].forEach((v) => {
-      ctx.strokeStyle = v === 0 ? css("--axis") : css("--grid");
+    for (let v = LUX_MIN_ESCALA; v <= LUX_MAX_ESCALA; v *= 10) {
+      ctx.strokeStyle = v === LUX_MIN_ESCALA ? css("--axis") : css("--grid");
       linea(m.l, y(v), m.l + pw, y(v));
       ctx.fillStyle = css("--muted");
-      ctx.fillText(v + "%", m.l - 8, y(v));
-    });
+      ctx.fillText((v >= 1000 ? v / 1000 + "k" : v) + "", m.l - 8, y(v));
+    }
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     for (let s = 120; s >= 0; s -= 30) {
@@ -399,7 +410,7 @@
     ctx.textBaseline = "middle";
     [[UMBRAL_BAJAR, "baja"], [UMBRAL_SUBIR, "sube"]].forEach(([v, txt]) => {
       linea(m.l, y(v), m.l + pw, y(v));
-      ctx.fillText(v + "% " + txt, m.l + pw + 8, y(v));
+      ctx.fillText(v + " lux " + txt, m.l + pw + 8, y(v));
     });
     ctx.setLineDash([]);
 
@@ -419,17 +430,17 @@
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.beginPath();
-    vis.forEach((d, i) => (i ? ctx.lineTo(x(d.t), y(d.luz)) : ctx.moveTo(x(d.t), y(d.luz))));
+    vis.forEach((d, i) => (i ? ctx.lineTo(x(d.t), y(d.lux)) : ctx.moveTo(x(d.t), y(d.lux))));
     ctx.stroke();
 
     if (hover && hover.t >= inicio) {
       ctx.strokeStyle = css("--muted");
       ctx.lineWidth = 1;
       linea(x(hover.t), m.t, x(hover.t), m.t + ph);
-      punto(x(hover.t), y(hover.luz));
+      punto(x(hover.t), y(hover.lux));
     } else {
       const ult = vis[vis.length - 1];
-      punto(x(ult.t), y(ult.luz));
+      punto(x(ult.t), y(ult.lux));
     }
   }
 
@@ -441,7 +452,7 @@
     const clave = document.createElement("span");
     clave.className = "clave";
     const valor = document.createElement("b");
-    valor.textContent = d.luz + " %";
+    valor.textContent = formatoLux(d.lux);
     principal.append(clave, valor, document.createTextNode(" luz"));
     const resto = document.createElement("div");
     resto.className = "resto";
@@ -456,7 +467,7 @@
     let left = px + 14;
     if (left + tip.offsetWidth > caja.clientWidth) left = px - tip.offsetWidth - 14;
     tip.style.left = Math.max(0, left) + "px";
-    tip.style.top = Math.max(0, Math.min(geo.y(d.luz) - tip.offsetHeight / 2, caja.clientHeight - tip.offsetHeight)) + "px";
+    tip.style.top = Math.max(0, Math.min(geo.y(d.lux) - tip.offsetHeight / 2, caja.clientHeight - tip.offsetHeight)) + "px";
   }
 
   canvas.addEventListener("pointermove", (e) => {
@@ -553,20 +564,21 @@
     registrarEvento("Modo demo iniciado", false);
     demoTimer = setInterval(() => {
       demo.fase += 0.05;
-      const ruido = (Math.random() - 0.5) * 8;
-      const luz = Math.round(Math.min(100, Math.max(0, 50 + 45 * Math.sin(demo.fase) + ruido)));
-      const raw = Math.round(50 + (luz / 100) * (3000 - 50));
-      if (!demo.abajo && luz >= UMBRAL_BAJAR) {
+      const ruido = (Math.random() - 0.5) * 0.3;
+      // Barre ~2 a ~2000 lux en forma de onda, como un día simulado.
+      const lux = Math.round(Math.pow(10, 1.5 + 1.3 * Math.sin(demo.fase) + ruido));
+      const raw = Math.round(4095 * (1 - fraccionLux(lux)));
+      if (!demo.abajo && lux >= UMBRAL_BAJAR) {
         demo.abajo = true;
-        procesarLinea(">>> Mucha luz: BAJANDO cortina");
-      } else if (demo.abajo && luz <= UMBRAL_SUBIR) {
+        procesarLinea(">>> Muchos lux: BAJANDO cortina");
+      } else if (demo.abajo && lux <= UMBRAL_SUBIR) {
         demo.abajo = false;
-        procesarLinea(">>> Poca luz: SUBIENDO cortina");
+        procesarLinea(">>> Pocos lux: SUBIENDO cortina");
       }
       const objetivo = demo.abajo ? 180 : 0;
       demo.ang += Math.max(-33, Math.min(33, objetivo - demo.ang));
-      procesarLinea("raw: " + raw + " | luz: " + luz +
-        "% | cortina: " + (demo.abajo ? "ABAJO " : "ARRIBA") + " (" + demo.ang + "°)");
+      procesarLinea("raw: " + raw + " | lux: " + lux +
+        " | cortina: " + (demo.abajo ? "ABAJO " : "ARRIBA") + " (" + demo.ang + "°)");
     }, 500);
   }
 

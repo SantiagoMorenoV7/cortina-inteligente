@@ -2,15 +2,24 @@
  * Simulador de cortinas automáticas con ESP32
  * --------------------------------------------
  * Sensor de luz: módulo MH-Sensor-Series (fotorresistencia/LDR + LM393).
+ * Cableado del módulo (letras impresas de izquierda a derecha):
+ *   AO -> D34   |   DO -> sin conectar   |   GND -> GND   |   VCC -> 3V3
  *
- *   Mucha luz -> se BAJA la cortina
- *   Poca luz  -> se SUBE la cortina
+ *   Muchos lux -> se BAJA la cortina
+ *   Pocos lux  -> se SUBE la cortina
  *
  * La cortina se representa con un servo (SG90) y el LED de la placa
  * se enciende mientras la cortina está abajo.
+ *
+ * Nota sobre los lux: este módulo es una fotorresistencia genérica sin hoja
+ * de datos exacta, así que el valor de lux es una ESTIMACIÓN (orden de
+ * magnitud), calculada con la curva típica de una GL5528. No es una medición
+ * calibrada; para lux precisos se necesitaría un sensor digital (p. ej.
+ * BH1750). Aun así sirve de sobra para este simulador.
  */
 
 #include <Arduino.h>
+#include <math.h>
 #include <ESP32Servo.h>
 
 // ---------------- Pines ----------------
@@ -18,22 +27,23 @@ const int PIN_SENSOR = 34;  // AO del módulo de luz (debe ser un pin ADC1: 32-3
 const int PIN_SERVO  = 18;  // Señal del servo
 const int PIN_LED    = 2;   // LED integrado del ESP32 DevKit
 
-// ------------- Calibración del sensor -------------
-// Abre el Monitor Serie (o el panel localhost:8080), mira el "raw" y ajusta
-// estos dos valores:
-//   VALOR_OSCURO: raw con el sensor tapado / en oscuridad
-//   VALOR_CLARO:  raw con una luz o linterna pegada al sensor
-// En este módulo el sensor funciona al revés de lo habitual: entre más luz,
-// el raw es MÁS BAJO. No importa cuál de los dos valores sea más grande,
-// el mapeo (map()) se ajusta solo.
-const int VALOR_OSCURO = 120;  // casi a oscuras dio 62-70; se deja margen
-const int VALOR_CLARO  = 0;    // con linterna pegada dio 0
+// ------------- Modelo del sensor (estimación de lux) -------------
+// El módulo forma un divisor de voltaje: VCC -> R_FIJO -> (AO) -> LDR -> GND.
+// R_FIJO_KOHM es el valor típico de la resistencia fija del módulo (10kΩ en
+// la mayoría de estos módulos LM393). Si el rango de lux se ve muy
+// desviado de la realidad, ajusta este valor.
+const float R_FIJO_KOHM = 10.0;
+
+// Curva aproximada de una fotorresistencia GL5528: R(kΩ) ≈ 32 * lux^-0.7
+const float LDR_COEF  = 32.0;
+const float LDR_GAMMA = 0.7;
 
 // ------------- Umbrales (con histéresis) -------------
 // Entre los dos umbrales la cortina se queda como está, así no "tiembla"
-// cuando la lectura está justo en el límite.
-const int LUZ_PARA_BAJAR = 60;  // % de luz a partir del cual se baja
-const int LUZ_PARA_SUBIR = 40;  // % de luz por debajo del cual se sube
+// cuando la lectura está justo en el límite. Ajusta estos valores viendo
+// los lux reales de tu cuarto en el Monitor Serie o en localhost:8080.
+const float LUX_PARA_BAJAR = 300.0;  // lux a partir del cual se baja
+const float LUX_PARA_SUBIR = 100.0;  // lux por debajo del cual se sube
 
 // ------------- Servo -------------
 const int ANGULO_SUBIDA = 0;
@@ -60,17 +70,20 @@ int leerSensorPromedio() {
   return suma / 10;
 }
 
-int calcularLuz(int raw) {
-  int luz = map(raw, VALOR_OSCURO, VALOR_CLARO, 0, 100);
-  return constrain(luz, 0, 100);
+// Convierte la lectura cruda del ADC (0-4095) a una estimación de lux.
+float calcularLux(int raw) {
+  float relacion = constrain(raw, 1, 4094) / 4095.0;  // evita 0% y 100% exactos
+  float rLdrKohm = R_FIJO_KOHM * relacion / (1.0 - relacion);
+  if (rLdrKohm < 0.05) rLdrKohm = 0.05;  // evita valores irreales cerca de 0
+  return pow(LDR_COEF / rLdrKohm, 1.0 / LDR_GAMMA);
 }
 
 void cambiarEstado(EstadoCortina nuevo) {
   estado = nuevo;
   anguloObjetivo = (estado == BAJADA) ? ANGULO_BAJADA : ANGULO_SUBIDA;
   digitalWrite(PIN_LED, estado == BAJADA ? HIGH : LOW);
-  Serial.println(estado == BAJADA ? ">>> Mucha luz: BAJANDO cortina"
-                                  : ">>> Poca luz: SUBIENDO cortina");
+  Serial.println(estado == BAJADA ? ">>> Muchos lux: BAJANDO cortina"
+                                  : ">>> Pocos lux: SUBIENDO cortina");
 }
 
 // Mueve el servo un grado cada MS_POR_GRADO sin bloquear el loop.
@@ -92,8 +105,8 @@ void setup() {
   servo.attach(PIN_SERVO, 500, 2400);
 
   // Estado inicial según la primera lectura, sin animación.
-  int luz = calcularLuz(leerSensorPromedio());
-  cambiarEstado(luz >= LUZ_PARA_BAJAR ? BAJADA : SUBIDA);
+  float lux = calcularLux(leerSensorPromedio());
+  cambiarEstado(lux >= LUX_PARA_BAJAR ? BAJADA : SUBIDA);
   anguloActual = anguloObjetivo;
   servo.write(anguloActual);
 
@@ -107,14 +120,14 @@ void loop() {
   ultimaLectura = millis();
 
   int raw = leerSensorPromedio();
-  int luz = calcularLuz(raw);
+  float lux = calcularLux(raw);
 
-  if (estado == SUBIDA && luz >= LUZ_PARA_BAJAR) {
+  if (estado == SUBIDA && lux >= LUX_PARA_BAJAR) {
     cambiarEstado(BAJADA);
-  } else if (estado == BAJADA && luz <= LUZ_PARA_SUBIR) {
+  } else if (estado == BAJADA && lux <= LUX_PARA_SUBIR) {
     cambiarEstado(SUBIDA);
   }
 
-  Serial.printf("raw: %4d | luz: %3d%% | cortina: %s (%d°)\n",
-                raw, luz, estado == BAJADA ? "ABAJO " : "ARRIBA", anguloActual);
+  Serial.printf("raw: %4d | lux: %7.1f | cortina: %s (%d°)\n",
+                raw, lux, estado == BAJADA ? "ABAJO " : "ARRIBA", anguloActual);
 }
