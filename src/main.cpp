@@ -61,8 +61,23 @@ const int MS_POR_GRADO  = 15;   // velocidad del movimiento (más alto = más le
 
 const unsigned long INTERVALO_LECTURA_MS = 500;
 
+// ------------- Suavizado -------------
+// Una fotorresistencia amplifica mucho el ruido al convertirla a lux (la
+// curva es muy pronunciada), así que sin suavizar el ángulo objetivo salta
+// de un lado a otro varias veces por segundo. Dos filtros lo arreglan:
+//   1) Más muestras por lectura (abajo, en leerSensorPromedio), que filtran
+//      el parpadeo rápido del sensor.
+//   2) Un suavizado exponencial entre lecturas sucesivas: en vez de saltar
+//      directo al nuevo valor cada INTERVALO_LECTURA_MS, el lux "filtrado"
+//      se mueve solo una fracción FACTOR_SUAVIZADO hacia el nuevo dato.
+// Baja FACTOR_SUAVIZADO para que sea más estable (pero más lenta para
+// reaccionar a un cambio real); súbelo para que reaccione más rápido (pero
+// con más temblor).
+const float FACTOR_SUAVIZADO = 0.15;
+
 int anguloActual;
 int anguloObjetivo;
+float luxFiltrado = -1;  // -1 = aún no se ha tomado la primera lectura
 unsigned long ultimoPasoServo = 0;
 unsigned long ultimaLectura = 0;
 
@@ -70,11 +85,12 @@ Servo servo;
 
 int leerSensorPromedio() {
   long suma = 0;
-  for (int i = 0; i < 10; i++) {
+  const int muestras = 20;
+  for (int i = 0; i < muestras; i++) {
     suma += analogRead(PIN_SENSOR);
-    delay(2);
+    delay(3);
   }
-  return suma / 10;
+  return suma / muestras;
 }
 
 // Convierte la lectura cruda del ADC (0-4095) a una estimación de lux.
@@ -113,8 +129,9 @@ void setup() {
   servo.setPeriodHertz(50);
   servo.attach(PIN_SERVO, 500, 2400);
 
-  // Posición inicial según la primera lectura, sin animación.
-  anguloObjetivo = calcularAnguloObjetivo(calcularLux(leerSensorPromedio()));
+  // Posición inicial según la primera lectura, sin animación ni suavizado.
+  luxFiltrado = calcularLux(leerSensorPromedio());
+  anguloObjetivo = calcularAnguloObjetivo(luxFiltrado);
   anguloActual = anguloObjetivo;
   servo.write(anguloActual);
   digitalWrite(PIN_LED, anguloActual > 90 ? HIGH : LOW);
@@ -130,7 +147,8 @@ void loop() {
 
   int raw = leerSensorPromedio();
   float lux = calcularLux(raw);
-  int nuevoObjetivo = calcularAnguloObjetivo(lux);
+  luxFiltrado += FACTOR_SUAVIZADO * (lux - luxFiltrado);
+  int nuevoObjetivo = calcularAnguloObjetivo(luxFiltrado);
 
   if (nuevoObjetivo == ANGULO_BAJADA && anguloObjetivo != ANGULO_BAJADA) {
     Serial.println(">>> Llega al tope de lux: cortina 100% cerrada");
@@ -139,6 +157,6 @@ void loop() {
   }
   anguloObjetivo = nuevoObjetivo;
 
-  Serial.printf("raw: %4d | lux: %7.1f | cortina: %s (%d°)\n",
-                raw, lux, anguloActual > 90 ? "ABAJO " : "ARRIBA", anguloActual);
+  Serial.printf("raw: %4d | lux: %7.1f | lux filtrado: %7.1f | cortina: %s (%d°)\n",
+                raw, lux, luxFiltrado, anguloActual > 90 ? "ABAJO " : "ARRIBA", anguloActual);
 }
