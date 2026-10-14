@@ -255,10 +255,7 @@
   }
 
   // ---------- Entrada de datos ----------
-  // El ESP32 ahora suaviza el lux con un filtro exponencial antes de mover
-  // el servo (ver FACTOR_SUAVIZADO en src/main.cpp); el panel grafica ese
-  // valor filtrado, que es el que realmente decide la posición de la cortina.
-  const RE_LECTURA = /raw:\s*(\d+)\s*\|\s*lux:\s*([\d.]+)\s*\|\s*lux filtrado:\s*([\d.]+)\s*\|\s*cortina:\s*(ABAJO|ARRIBA)\s*\((-?\d+)/;
+  const RE_LECTURA = /raw:\s*(\d+)\s*\|\s*lux:\s*([\d.]+)\s*\|\s*cortina:\s*(ABAJO|ARRIBA)\s*\((-?\d+)/;
 
   function procesarLinea(linea) {
     linea = linea.trim();
@@ -266,7 +263,7 @@
     const m = RE_LECTURA.exec(linea);
     if (m) {
       agregarLectura({
-        t: Date.now(), raw: +m[1], lux: +m[3], abajo: m[4] === "ABAJO", ang: +m[5],
+        t: Date.now(), raw: +m[1], lux: +m[2], abajo: m[3] === "ABAJO", ang: +m[4],
       });
     } else if (linea.startsWith(">>>")) {
       registrarEvento(linea.replace(/^>>>\s*/, ""), true);
@@ -578,7 +575,7 @@
       const objetivo = Math.round(fraccionCierre * 180);
       demo.abajo = demo.ang > 90;
       demo.ang += Math.max(-33, Math.min(33, objetivo - demo.ang));
-      procesarLinea("raw: " + raw + " | lux: " + lux + " | lux filtrado: " + lux +
+      procesarLinea("raw: " + raw + " | lux: " + lux +
         " | cortina: " + (demo.ang > 90 ? "ABAJO " : "ARRIBA") + " (" + demo.ang + "°)");
     }, 500);
   }

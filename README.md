@@ -57,9 +57,6 @@ el fabricante)
    - `R_FIJO_KOHM`: si los lux se ven muy desviados de la realidad, prueba
      cambiando este valor (10kΩ por defecto, típico de estos módulos).
 4. Ajusta si quieres `ANGULO_*` o `MS_POR_GRADO` (velocidad del servo).
-5. Si la cortina se ve "temblorosa" (cambia de ángulo varias veces por
-   segundo), baja `FACTOR_SUAVIZADO` (por defecto 0.15) para que reaccione
-   más despacio pero más estable; súbelo si la notas demasiado lenta.
 
 Ejemplo de salida:
 
