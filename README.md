@@ -57,6 +57,10 @@ el fabricante)
    - `R_FIJO_KOHM`: si los lux se ven muy desviados de la realidad, prueba
      cambiando este valor (10kΩ por defecto, típico de estos módulos).
 4. Ajusta si quieres `ANGULO_*` o `MS_POR_GRADO` (velocidad del servo).
+5. Si la cortina "tiembla" (cambia de dirección varias veces por segundo),
+   baja `FACTOR_SUAVIZADO` (0.2 por defecto); si la ves demasiado lenta
+   para seguir a la linterna, súbelo. El suavizado se aplica después del
+   sensor y no cambia cómo se lee ni cómo se convierte a lux.
 
 Ejemplo de salida:
 

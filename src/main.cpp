@@ -61,8 +61,22 @@ const int MS_POR_GRADO  = 15;   // velocidad del movimiento (más alto = más le
 
 const unsigned long INTERVALO_LECTURA_MS = 500;
 
+// ------------- Suavizado -------------
+// La curva de la fotorresistencia amplifica mucho el ruido al pasarlo a lux,
+// y sin suavizar el ángulo objetivo salta varias veces por segundo. Se
+// corrige con un suavizado exponencial aplicado DESPUÉS del sensor: en vez de
+// saltar directo al nuevo lux cada INTERVALO_LECTURA_MS, el valor suavizado
+// avanza solo una fracción FACTOR_SUAVIZADO hacia él.
+//   - Más bajo (0.05-0.1): más estable, pero tarda más en reaccionar.
+//   - Más alto (0.3-0.5): reacciona rápido, pero con más temblor.
+// No toca la lectura del sensor ni la conversión a lux; solo filtra el
+// resultado antes de decidir el ángulo. El "lux" que se imprime es este
+// valor suavizado, que es el que realmente mueve la cortina.
+const float FACTOR_SUAVIZADO = 0.2;
+
 int anguloActual;
 int anguloObjetivo;
+float luxSuavizado;
 unsigned long ultimoPasoServo = 0;
 unsigned long ultimaLectura = 0;
 
@@ -113,8 +127,10 @@ void setup() {
   servo.setPeriodHertz(50);
   servo.attach(PIN_SERVO, 500, 2400);
 
-  // Posición inicial según la primera lectura, sin animación.
-  anguloObjetivo = calcularAnguloObjetivo(calcularLux(leerSensorPromedio()));
+  // Posición inicial según la primera lectura, sin animación. El suavizado
+  // arranca desde esa misma lectura para no empezar desde cero.
+  luxSuavizado = calcularLux(leerSensorPromedio());
+  anguloObjetivo = calcularAnguloObjetivo(luxSuavizado);
   anguloActual = anguloObjetivo;
   servo.write(anguloActual);
   digitalWrite(PIN_LED, anguloActual > 90 ? HIGH : LOW);
@@ -130,7 +146,8 @@ void loop() {
 
   int raw = leerSensorPromedio();
   float lux = calcularLux(raw);
-  int nuevoObjetivo = calcularAnguloObjetivo(lux);
+  luxSuavizado += FACTOR_SUAVIZADO * (lux - luxSuavizado);
+  int nuevoObjetivo = calcularAnguloObjetivo(luxSuavizado);
 
   if (nuevoObjetivo == ANGULO_BAJADA && anguloObjetivo != ANGULO_BAJADA) {
     Serial.println(">>> Llega al tope de lux: cortina 100% cerrada");
@@ -140,5 +157,5 @@ void loop() {
   anguloObjetivo = nuevoObjetivo;
 
   Serial.printf("raw: %4d | lux: %7.1f | cortina: %s (%d°)\n",
-                raw, lux, anguloActual > 90 ? "ABAJO " : "ARRIBA", anguloActual);
+                raw, luxSuavizado, anguloActual > 90 ? "ABAJO " : "ARRIBA", anguloActual);
 }
