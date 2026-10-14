@@ -32,17 +32,30 @@ el fabricante)
 | AO | GPIO 34 |
 | DO | sin conectar |
 
-**Servo SG90 → ESP32**
+**Servo SG90, alimentado con 4 pilas AA NiMH (4.8 V)**
 
-| Cable | ESP32 |
+El servo se alimenta con un portapilas de 4×AA NiMH de 1.2 V (4.8 V nominales,
+hasta ~5.6 V recién cargadas: dentro del rango de 4.8-6 V del SG90). El ESP32
+sigue alimentado por USB. **Las pilas y el ESP32 deben compartir GND**, o el
+servo no entiende la señal.
+
+| Desde | Hacia |
 |---|---|
-| Marrón | GND |
-| Rojo | VIN (5V del USB) |
-| Naranja | GPIO 18 |
+| Pilas rojo (+) | Servo rojo (VCC) — y a nada más |
+| Pilas negro (−) | Servo marrón (GND) **y** ESP32 GND |
+| ESP32 GPIO 18 | Servo naranja (señal) |
 
-> Si el ESP32 se reinicia cuando el servo se mueve, el USB no le da suficiente corriente:
-> alimenta el servo con una fuente de 5V externa (uniendo los GND) o pon un capacitor
-> de 470 µF entre 5V y GND cerca del servo.
+> ⚠️ El rojo de las pilas nunca va a 3V3 ni a ningún pin del ESP32: a 3V3 lo
+> dañarías. Solo el negro (−) se une al GND del ESP32.
+
+> Alternativa sin pilas: servo rojo → VIN (5V del USB), marrón → GND. Si el
+> ESP32 se reinicia cuando el servo se mueve, el USB no da suficiente
+> corriente; vuelve a las pilas o pon un capacitor de 470 µF entre 5V y GND
+> cerca del servo.
+
+El SG90 gira 180°, no da vueltas completas: para mover la cortina, amarra un
+hilo al brazo del servo a modo de malacate (con el brazo de ~2 cm, media vuelta
+recoge unos 4-5 cm de hilo).
 
 ## Uso
 
