@@ -7,160 +7,372 @@
 <style>
   :root {
     color-scheme: light;
-    --page: #f9f9f7;
-    --surface: #fcfcfb;
+    --page: #f3f4f6;
+    --glow-a: rgba(42, 120, 214, 0.14);
+    --glow-b: rgba(250, 178, 25, 0.12);
+    --surface: #ffffff;
+    --surface-2: #f6f7f9;
+    --surface-3: #eceef2;
     --ink: #0b0b0b;
     --ink-2: #52514e;
     --muted: #898781;
     --grid: #e1e0d9;
     --axis: #c3c2b7;
     --border: rgba(11, 11, 11, 0.10);
+    --border-strong: rgba(11, 11, 11, 0.16);
+    --highlight: rgba(255, 255, 255, 0.9);
+    --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 12px 32px -12px rgba(11, 11, 11, 0.18);
     --series: #2a78d6;
+    --series-2: #1c5cab;
     --good: #0ca30c;
+    --good-glow: rgba(12, 163, 12, 0.35);
     --critical: #d03b3b;
-    --frame: #8a6d4b;
-    --fabric: #d9c3a0;
-    --fabric-fold: #c4aa82;
-    --sky-low: #5b6b7d;
-    --sky-high: #cde2fb;
     --sun: #fab219;
+    --frame: #8a6d4b;
+    --frame-light: #ad8d63;
+    --frame-dark: #5a4530;
+    --fabric: #d9c3a0;
+    --fabric-light: #ecdcc0;
+    --fabric-fold: #b89a73;
+    --sky-noche-arriba: #243650;
+    --sky-noche-abajo: #4a5f7c;
+    --sky-dia-arriba: #6aa6ea;
+    --sky-dia-abajo: #d9eafc;
+    --metal: #9aa0a8;
+    --metal-light: #d4d8de;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       color-scheme: dark;
-      --page: #0d0d0d;
-      --surface: #1a1a19;
-      --ink: #f0efec;
-      --ink-2: #c3c2b7;
-      --muted: #898781;
-      --grid: #2c2c2a;
-      --axis: #383835;
-      --border: rgba(255, 255, 255, 0.10);
+      --page: #0b0d10;
+      --glow-a: rgba(57, 135, 229, 0.16);
+      --glow-b: rgba(250, 178, 25, 0.08);
+      --surface: #15181d;
+      --surface-2: #1b1f26;
+      --surface-3: #222730;
+      --ink: #eef0f3;
+      --ink-2: #b8bec8;
+      --muted: #7d8591;
+      --grid: #262b33;
+      --axis: #343a45;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.14);
+      --highlight: rgba(255, 255, 255, 0.07);
+      --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 40px -16px rgba(0, 0, 0, 0.7);
       --series: #3987e5;
-      --frame: #6b5439;
-      --fabric: #a8916d;
-      --fabric-fold: #8f7a58;
-      --sky-low: #1f2a36;
-      --sky-high: #6da7ec;
+      --series-2: #6da7ec;
+      --good: #2fbf4f;
+      --good-glow: rgba(47, 191, 79, 0.4);
+      --critical: #e66767;
+      --frame: #7a5a3a;
+      --frame-light: #9c7a52;
+      --frame-dark: #46331f;
+      --fabric: #b89a73;
+      --fabric-light: #cdb08b;
+      --fabric-fold: #8a6f4e;
+      --sky-noche-arriba: #0c1522;
+      --sky-noche-abajo: #1c2b42;
+      --sky-dia-arriba: #5c9ce6;
+      --sky-dia-abajo: #c6def8;
+      --metal: #6b727c;
+      --metal-light: #b7bdc6;
     }
   }
 
   * { box-sizing: border-box; }
+  html { background: var(--page); }
   body {
     margin: 0;
-    background: var(--page);
     color: var(--ink);
     font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(900px 500px at -10% -10%, var(--glow-a), transparent 60%),
+      radial-gradient(700px 500px at 110% 110%, var(--glow-b), transparent 60%),
+      var(--page);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
-  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  main { max-width: 1140px; margin: 0 auto; padding: 28px 16px 56px; }
 
+  /* ---------- Cabecera ---------- */
   header {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
-    justify-content: space-between; margin-bottom: 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
+    justify-content: space-between; margin-bottom: 22px;
   }
-  h1 { font-size: 22px; margin: 0; }
-  .sub { color: var(--ink-2); margin: 2px 0 0; font-size: 14px; }
-  .acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .titulo { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 14px; flex: none;
+    display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, var(--series-2), var(--series));
+    box-shadow: 0 8px 20px -8px var(--series);
+  }
+  .logo svg { width: 26px; height: 26px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); margin: 2px 0 0; font-size: 13.5px; }
+
+  .acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   button {
     font: inherit; font-weight: 600; cursor: pointer;
-    border-radius: 8px; padding: 8px 14px;
-    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+    border-radius: 10px; padding: 9px 16px;
+    border: 1px solid var(--border-strong);
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
+    color: var(--ink);
+    box-shadow: 0 1px 0 var(--highlight) inset, 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
   }
-  button.primario { background: var(--series); border-color: var(--series); color: #fff; }
+  button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  button.primario {
+    color: #fff; border-color: transparent;
+    background: linear-gradient(180deg, var(--series), var(--series-2));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 18px -8px var(--series);
+  }
   button:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+
   .estado {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; color: var(--ink-2);
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--ink-2);
+    padding: 7px 12px 7px 10px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border);
   }
   .estado::before {
-    content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+    content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted);
+    box-shadow: 0 0 0 0 transparent;
   }
-  .estado[data-tipo="ok"]::before { background: var(--good); }
+  .estado[data-tipo="ok"] { color: var(--good); }
+  .estado[data-tipo="ok"]::before { background: var(--good); animation: pulso 1.8s ease-out infinite; }
+  .estado[data-tipo="error"] { color: var(--critical); }
   .estado[data-tipo="error"]::before { background: var(--critical); }
+  @keyframes pulso {
+    0%   { box-shadow: 0 0 0 0 var(--good-glow); }
+    70%  { box-shadow: 0 0 0 9px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
 
   .aviso {
-    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--critical);
-    border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--critical);
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-size: 14px; box-shadow: var(--shadow);
   }
 
+  /* ---------- Tarjetas ---------- */
   .tarjeta {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px;
+    position: relative;
+    background: linear-gradient(180deg, var(--surface-2), var(--surface) 60%);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 18px 20px;
+    box-shadow: var(--shadow);
   }
-  .tarjeta h2 { font-size: 14px; font-weight: 600; margin: 0 0 12px; color: var(--ink-2); }
+  .tarjeta::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; border-radius: 18px 18px 0 0;
+    background: linear-gradient(90deg, transparent, var(--highlight), transparent);
+    pointer-events: none;
+  }
+  .tarjeta h2 {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    margin: 0 0 14px; color: var(--muted);
+  }
+  .tarjeta h2 svg { width: 15px; height: 15px; opacity: 0.8; }
 
-  .fila { display: grid; gap: 16px; margin-bottom: 16px; }
-  .fila-superior { grid-template-columns: minmax(220px, 300px) 1fr; }
+  .fila { display: grid; gap: 18px; margin-bottom: 18px; }
+  .fila-superior { grid-template-columns: minmax(280px, 360px) 1fr; }
   .fila-inferior { grid-template-columns: 1fr 1fr; }
-  @media (max-width: 760px) {
+  @media (max-width: 820px) {
     .fila-superior, .fila-inferior { grid-template-columns: 1fr; }
   }
 
-  /* Ventana con cortina */
+  /* ---------- Ventana con cortina ---------- */
+  .escena { max-width: 320px; margin: 0 auto; }
   .ventana {
-    position: relative; width: 100%; max-width: 260px; margin: 0 auto;
-    aspect-ratio: 4 / 5; border: 10px solid var(--frame); border-radius: 6px;
-    overflow: hidden;
+    position: relative; width: 100%; aspect-ratio: 4 / 5;
+    padding: 14px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--frame-light), var(--frame) 45%, var(--frame-dark));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 -2px 0 rgba(0, 0, 0, 0.25) inset,
+      0 18px 30px -14px rgba(0, 0, 0, 0.6);
   }
-  .cielo { position: absolute; inset: 0; background: var(--sky-low); transition: background 0.6s; }
-  .cielo::before, .cielo::after { content: ""; position: absolute; background: var(--frame); }
-  .cielo::before { left: 50%; top: 0; bottom: 0; width: 6px; transform: translateX(-50%); }
-  .cielo::after { top: 50%; left: 0; right: 0; height: 6px; transform: translateY(-50%); }
+  .cristal {
+    position: absolute; inset: 14px; overflow: hidden; border-radius: 4px;
+    background: linear-gradient(180deg, var(--sky-noche-arriba), var(--sky-noche-abajo));
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.28), inset 0 14px 26px rgba(0, 0, 0, 0.28);
+  }
+  .cielo { position: absolute; inset: 0; transition: background 0.8s; }
+  .estrellas {
+    position: absolute; inset: 0; opacity: 1; transition: opacity 0.8s;
+    background:
+      radial-gradient(1.5px 1.5px at 18% 22%, #fff 95%, transparent),
+      radial-gradient(1px 1px at 62% 14%, #fff 95%, transparent),
+      radial-gradient(1.5px 1.5px at 80% 38%, #fff 95%, transparent),
+      radial-gradient(1px 1px at 36% 48%, #fff 95%, transparent),
+      radial-gradient(1px 1px at 48% 30%, #fff 95%, transparent),
+      radial-gradient(1.5px 1.5px at 10% 62%, #fff 95%, transparent),
+      radial-gradient(1px 1px at 72% 66%, #fff 95%, transparent),
+      radial-gradient(1px 1px at 88% 12%, #fff 95%, transparent);
+  }
   .sol {
-    position: absolute; top: 14%; right: 14%; width: 22%; aspect-ratio: 1;
-    border-radius: 50%; background: var(--sun); opacity: 0; transition: opacity 0.6s;
-    box-shadow: 0 0 24px var(--sun);
+    position: absolute; top: 16%; right: 16%; width: 26%; aspect-ratio: 1;
+    border-radius: 50%; opacity: 0; transform: scale(0.8);
+    background: radial-gradient(circle at 40% 35%, #fff2b8, var(--sun) 55%, #e38f09);
+    box-shadow: 0 0 18px 6px rgba(250, 178, 25, 0.55), 0 0 60px 22px rgba(250, 178, 25, 0.28);
+    transition: opacity 0.8s, transform 0.8s;
   }
+  .nube {
+    position: absolute; height: 16%; border-radius: 999px; opacity: 0;
+    background: rgba(255, 255, 255, 0.85); filter: blur(5px);
+    transition: opacity 0.8s;
+  }
+  .nube.a { left: 8%; top: 40%; width: 42%; }
+  .nube.b { left: 46%; top: 56%; width: 36%; height: 12%; }
+  .horizonte {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 22%;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.22));
+  }
+  .travesano, .parteluz { position: absolute; background: linear-gradient(90deg, var(--frame-dark), var(--frame) 40%, var(--frame-light)); }
+  .parteluz { left: 50%; top: 0; bottom: 0; width: 8px; transform: translateX(-50%); box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3); }
+  .travesano { top: 50%; left: 0; right: 0; height: 8px; transform: translateY(-50%);
+    background: linear-gradient(180deg, var(--frame-light), var(--frame) 60%, var(--frame-dark)); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+  .brillo {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 28%, transparent 46%);
+  }
+  .riel {
+    position: absolute; left: 10px; right: 10px; top: 8px; height: 7px; border-radius: 999px; z-index: 3;
+    background: linear-gradient(180deg, var(--metal-light), var(--metal));
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+  }
+  .riel::before, .riel::after {
+    content: ""; position: absolute; top: -3px; width: 13px; height: 13px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--metal-light), var(--metal));
+  }
+  .riel::before { left: -4px; } .riel::after { right: -4px; }
   .cortina {
-    position: absolute; top: 0; left: 0; right: 0; height: 0%;
-    background: repeating-linear-gradient(90deg, var(--fabric) 0 14px, var(--fabric-fold) 14px 18px);
-    border-bottom: 6px solid var(--frame);
+    position: absolute; top: 0; left: 0; right: 0; height: 0%; z-index: 2;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 18%, transparent 86%, rgba(0, 0, 0, 0.12)),
+      repeating-linear-gradient(90deg, var(--fabric-light) 0 7px, var(--fabric) 7px 16px, var(--fabric-fold) 16px 22px);
+    border-bottom: 5px solid var(--fabric-fold);
+    box-shadow: 0 10px 18px -4px rgba(0, 0, 0, 0.55);
     transition: height 0.5s linear;
   }
-  .leyenda-ventana { text-align: center; margin: 12px 0 0; font-weight: 600; }
-  .leyenda-ventana span { color: var(--ink-2); font-weight: 400; }
+  .repisa {
+    height: 14px; margin: 0 -8px; border-radius: 3px;
+    background: linear-gradient(180deg, var(--frame-light), var(--frame) 50%, var(--frame-dark));
+    box-shadow: 0 8px 14px -6px rgba(0, 0, 0, 0.6);
+  }
+  .leyenda-ventana {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    margin: 16px 2px 8px; font-weight: 600;
+  }
+  .leyenda-ventana span { color: var(--ink-2); font-weight: 500; font-size: 13.5px; }
+  .barra-progreso {
+    height: 8px; border-radius: 999px; overflow: hidden;
+    background: var(--surface-3); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  .barra-progreso > i {
+    display: block; height: 100%; width: 0%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--series-2), var(--series));
+    transition: width 0.5s linear;
+  }
 
-  /* Indicadores */
-  .indicadores { display: grid; grid-template-columns: 1fr; gap: 12px; align-content: start; }
-  .indicador { background: var(--page); border-radius: 10px; padding: 12px 14px; }
-  .indicador .etiqueta { font-size: 13px; color: var(--ink-2); }
-  .indicador .valor { font-size: 30px; font-weight: 700; line-height: 1.2; }
-  .indicador .nota { font-size: 12px; color: var(--muted); }
+  /* ---------- Indicadores ---------- */
+  .indicadores { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 14px; }
+  .indicador.ancho { grid-column: 1 / -1; }
+  @media (max-width: 560px) { .indicadores { grid-template-columns: 1fr; grid-template-rows: none; } }
+  .indicador {
+    display: grid; grid-template-columns: 44px 1fr; gap: 4px 14px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+    box-shadow: 0 1px 0 var(--highlight) inset;
+  }
+  .indicador .icono {
+    grid-row: span 3; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+    color: var(--series); background: color-mix(in srgb, var(--series) 14%, transparent);
+  }
+  .indicador.calido .icono { color: #d4890f; background: color-mix(in srgb, var(--sun) 18%, transparent); }
+  .indicador .icono svg { width: 22px; height: 22px; }
+  .indicador .etiqueta { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .indicador .valor { font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .indicador .nota { font-size: 12.5px; color: var(--muted); }
 
-  /* Gráfica */
-  .grafica-caja { position: relative; height: 260px; }
+  .medidor { position: relative; height: 10px; margin: 8px 0 18px; border-radius: 999px;
+    background: linear-gradient(90deg, #1b2740, #3d6fb0 45%, #9fc8f3 80%, #fff1c2);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35); }
+  .medidor .tic { position: absolute; top: 14px; font-size: 10.5px; color: var(--muted); transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+  .medidor .umbral { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink-2); opacity: 0.7; transform: translateX(-50%); border-radius: 1px; }
+  .medidor .marcador {
+    position: absolute; top: 50%; left: 0; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--surface); border: 3px solid var(--series);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--series) 30%, transparent), 0 2px 6px rgba(0, 0, 0, 0.3);
+    transform: translate(-50%, -50%); transition: left 0.5s linear;
+  }
+  .gauge { width: 100%; max-width: 150px; height: auto; display: block; margin-top: 4px; }
+  .gauge .fondo { fill: none; stroke: var(--surface-3); stroke-width: 9; stroke-linecap: round; }
+  .gauge .arco { fill: none; stroke: var(--series); stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray 0.5s linear; }
+  .gauge .aguja { stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; transition: transform 0.5s linear; transform-origin: 60px 60px; }
+  .gauge .pivote { fill: var(--ink); }
+  .gauge text { font-size: 9px; fill: var(--muted); font-family: inherit; }
+
+  /* ---------- Gráfica ---------- */
+  .grafica-caja { position: relative; height: 280px; }
   canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   .tooltip {
-    position: absolute; pointer-events: none; min-width: 150px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    position: absolute; pointer-events: none; min-width: 160px;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
   }
   .tooltip .hora { color: var(--muted); font-size: 12px; }
   .tooltip .principal { display: flex; align-items: center; gap: 6px; }
-  .tooltip .principal b { font-size: 16px; }
+  .tooltip .principal b { font-size: 17px; }
   .tooltip .clave { width: 14px; height: 2px; background: var(--series); border-radius: 1px; }
   .tooltip .resto { color: var(--ink-2); }
 
+  /* ---------- Tabla y eventos ---------- */
   table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
-  th, td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--grid); }
+  th, td { text-align: right; padding: 8px 8px; border-bottom: 1px solid var(--grid); }
   th:first-child, td:first-child, th:last-child, td:last-child { text-align: left; }
-  th { color: var(--ink-2); font-weight: 600; font-size: 13px; }
+  th { color: var(--muted); font-weight: 700; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  tbody tr:nth-child(odd) { background: color-mix(in srgb, var(--surface-3) 50%, transparent); }
+  tbody tr:first-child td { color: var(--ink); font-weight: 600; }
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    background: var(--surface-3); color: var(--ink-2);
+  }
+  .pill.abajo { background: color-mix(in srgb, var(--series) 16%, transparent); color: var(--series); }
 
-  ol.eventos { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; font-size: 14px; }
-  ol.eventos li { padding: 5px 0; border-bottom: 1px solid var(--grid); }
-  ol.eventos time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; }
-  ol.eventos li.accion { font-weight: 600; }
+  ol.eventos { list-style: none; margin: 0; padding: 0 0 0 4px; max-height: 300px; overflow-y: auto; font-size: 14px; }
+  ol.eventos li { position: relative; padding: 7px 0 7px 20px; border-bottom: 1px solid var(--grid); color: var(--ink-2); }
+  ol.eventos li::before {
+    content: ""; position: absolute; left: 4px; top: 14px; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+  }
+  ol.eventos li.accion { color: var(--ink); font-weight: 600; }
+  ol.eventos li.accion::before { background: var(--series); box-shadow: 0 0 0 3px color-mix(in srgb, var(--series) 25%, transparent); }
+  ol.eventos time { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; margin-right: 8px; font-size: 12.5px; }
   .vacio { color: var(--muted); font-size: 14px; }
 
-  footer { color: var(--muted); font-size: 13px; }
+  footer { display: flex; gap: 8px; align-items: flex-start; color: var(--muted); font-size: 13px; }
+  footer svg { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <div>
-      <h1>Panel de cortinas automáticas</h1>
-      <p class="sub">ESP32 · sensor de luz MH-Sensor-Series (LDR)</p>
+    <div class="titulo">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Panel de cortinas automáticas</h1>
+        <p class="sub">ESP32 · sensor de luz MH-Sensor-Series (LDR) · servo SG90</p>
+      </div>
     </div>
     <div class="acciones">
       <span class="estado" id="estado" data-tipo="off">Desconectado</span>
@@ -176,35 +388,84 @@
 
   <section class="fila fila-superior">
     <div class="tarjeta">
-      <h2>Cortina</h2>
-      <div class="ventana" aria-hidden="true">
-        <div class="cielo" id="cielo"><div class="sol" id="sol"></div></div>
-        <div class="cortina" id="cortina"></div>
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M3 12h18"/></svg>
+        Cortina
+      </h2>
+      <div class="escena">
+        <div class="ventana" aria-hidden="true">
+          <div class="cristal">
+            <div class="cielo" id="cielo"></div>
+            <div class="estrellas" id="estrellas"></div>
+            <div class="sol" id="sol"></div>
+            <div class="nube a" id="nubeA"></div>
+            <div class="nube b" id="nubeB"></div>
+            <div class="horizonte"></div>
+            <div class="parteluz"></div>
+            <div class="travesano"></div>
+            <div class="brillo"></div>
+            <div class="cortina" id="cortina"></div>
+          </div>
+          <div class="riel"></div>
+        </div>
+        <div class="repisa"></div>
+        <p class="leyenda-ventana"><span id="leyendaCortina">Sin datos</span><b id="leyendaPorcentaje"></b></p>
+        <div class="barra-progreso" aria-hidden="true"><i id="barraCortina"></i></div>
       </div>
-      <p class="leyenda-ventana" id="leyendaCortina">Sin datos</p>
     </div>
 
-    <div class="tarjeta indicadores">
-      <div class="indicador">
+    <div class="indicadores">
+      <div class="indicador calido ancho">
+        <div class="icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </div>
         <div class="etiqueta">Luz (lux estimados)</div>
         <div class="valor" id="vLuz">—</div>
-        <div class="nota">Abierta ≤ 80 lux · cerrada ≥ 9000 lux (gradual)</div>
+        <div>
+          <div class="medidor" id="medidorLux" aria-hidden="true">
+            <div class="marcador" id="marcadorLux"></div>
+          </div>
+          <div class="nota">Abierta ≤ 80 lux · cerrada ≥ 9000 lux, gradual entre los dos</div>
+        </div>
       </div>
+
       <div class="indicador">
+        <div class="icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16M4 9h16M4 14h16M4 19h16"/></svg>
+        </div>
         <div class="etiqueta">% de la cortina</div>
         <div class="valor" id="vPorcentaje">—</div>
-        <div class="nota">0% arriba · 100% abajo</div>
+        <div>
+          <div class="barra-progreso" style="margin: 6px 0 8px" aria-hidden="true"><i id="barraPorcentaje"></i></div>
+          <div class="nota">0% arriba · 100% abajo</div>
+        </div>
       </div>
+
       <div class="indicador">
+        <div class="icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16l4-5"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>
+        </div>
         <div class="etiqueta">Cortina</div>
         <div class="valor" id="vCortina">—</div>
-        <div class="nota" id="vAngulo">Ángulo del servo</div>
+        <div>
+          <svg class="gauge" viewBox="0 0 120 68" aria-hidden="true">
+            <path class="fondo" d="M12 60 A48 48 0 0 1 108 60"/>
+            <path class="arco" id="arcoServo" d="M12 60 A48 48 0 0 1 108 60" stroke-dasharray="0 1000"/>
+            <line class="aguja" id="agujaServo" x1="60" y1="60" x2="60" y2="20" style="transform: rotate(-90deg)"/>
+            <circle class="pivote" cx="60" cy="60" r="4"/>
+            <text x="4" y="66">0°</text><text x="54" y="10">90°</text><text x="102" y="66">180°</text>
+          </svg>
+          <div class="nota" id="vAngulo">Ángulo del servo</div>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="tarjeta fila">
-    <h2>Luz, últimos 2 minutos (lux, escala logarítmica)</h2>
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17l5-6 4 4 5-8 4 5"/></svg>
+      Luz, últimos 2 minutos (lux, escala logarítmica)
+    </h2>
     <div class="grafica-caja" id="graficaCaja">
       <canvas id="grafica" role="img" aria-label="Gráfica de los lux en el tiempo"></canvas>
       <div class="tooltip" id="tooltip" hidden></div>
@@ -213,7 +474,10 @@
 
   <section class="fila fila-inferior">
     <div class="tarjeta">
-      <h2>Últimas lecturas</h2>
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>
+        Últimas lecturas
+      </h2>
       <table>
         <thead><tr><th>Hora</th><th>Raw</th><th>Lux</th><th>Cortina</th></tr></thead>
         <tbody id="tabla"></tbody>
@@ -221,14 +485,18 @@
       <p class="vacio" id="tablaVacia">Aún no hay lecturas.</p>
     </div>
     <div class="tarjeta">
-      <h2>Eventos</h2>
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Eventos
+      </h2>
       <ol class="eventos" id="eventos"></ol>
       <p class="vacio" id="eventosVacio">Aún no hay eventos.</p>
     </div>
   </section>
 
   <footer>
-    Cierra el Monitor Serie de VS Code antes de conectar: solo un programa puede usar el puerto COM a la vez.
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+    <span>Cierra el Monitor Serie de VS Code antes de conectar: solo un programa puede usar el puerto COM a la vez.</span>
   </footer>
 </main>
 
@@ -241,6 +509,7 @@
   const VENTANA_MS = 120000;
   const MAX_PUNTOS = 600;
   const BAUDIOS = 115200;
+  const LARGO_ARCO = Math.PI * 48;  // longitud del semicírculo del gauge (r = 48)
 
   const $ = (id) => document.getElementById(id);
   const datos = [];
@@ -267,7 +536,7 @@
       });
     } else if (linea.startsWith(">>>")) {
       registrarEvento(linea.replace(/^>>>\s*/, ""), true);
-    } else if (/^[\x20-\x7E -ÿ]+$/.test(linea)) {
+    } else if (/^[\x20-\x7E -ÿ]+$/.test(linea)) {
       registrarEvento(linea, false);  // mensajes de arranque; se ignora la basura binaria
     }
   }
@@ -293,12 +562,18 @@
   // ---------- Vista ----------
   const hora = (t) => new Date(t).toLocaleTimeString("es", { hour12: false });
   const formatoLux = (lux) => (lux >= 1000 ? (lux / 1000).toFixed(1) + "k" : Math.round(lux)) + " lux";
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
   function actualizarIndicadores(l) {
+    const porcentaje = Math.round((l.ang / 180) * 100);
     $("vLuz").textContent = formatoLux(l.lux);
-    $("vPorcentaje").textContent = Math.round((l.ang / 180) * 100) + " %";
+    $("marcadorLux").style.left = (fraccionLux(l.lux) * 100) + "%";
+    $("vPorcentaje").textContent = porcentaje + " %";
+    $("barraPorcentaje").style.width = porcentaje + "%";
     $("vCortina").textContent = l.abajo ? "▼ Abajo" : "▲ Arriba";
     $("vAngulo").textContent = "Servo a " + l.ang + "°";
+    $("arcoServo").setAttribute("stroke-dasharray", (l.ang / 180) * LARGO_ARCO + " 1000");
+    $("agujaServo").style.transform = "rotate(" + (l.ang - 90) + "deg)";
   }
 
   function mezclar(a, b, f) {
@@ -309,24 +584,36 @@
 
   function actualizarCortina(l) {
     const f = fraccionLux(l.lux);
-    $("cortina").style.height = Math.max(0, Math.min(100, (l.ang / 180) * 100)) + "%";
-    $("cielo").style.background = mezclar(css("--sky-low"), css("--sky-high"), f);
-    $("sol").style.opacity = Math.max(0, (f - 0.3) / 0.7);
-    const leyenda = $("leyendaCortina");
-    leyenda.replaceChildren(
-      document.createTextNode(l.abajo ? "Cortina abajo " : "Cortina arriba "),
-      Object.assign(document.createElement("span"), { textContent: "· " + l.ang + "°" })
-    );
+    const porcentaje = Math.max(0, Math.min(100, (l.ang / 180) * 100));
+    $("cortina").style.height = porcentaje + "%";
+    $("barraCortina").style.width = porcentaje + "%";
+    $("cielo").style.background = "linear-gradient(180deg, " +
+      mezclar(css("--sky-noche-arriba"), css("--sky-dia-arriba"), f) + ", " +
+      mezclar(css("--sky-noche-abajo"), css("--sky-dia-abajo"), f) + ")";
+    $("estrellas").style.opacity = Math.pow(1 - f, 2);
+    const sol = $("sol");
+    sol.style.opacity = Math.max(0, (f - 0.25) / 0.75);
+    sol.style.transform = "scale(" + (0.8 + 0.35 * f) + ")";
+    $("nubeA").style.opacity = 0.9 * Math.max(0, (f - 0.35) / 0.65);
+    $("nubeB").style.opacity = 0.7 * Math.max(0, (f - 0.45) / 0.55);
+    $("leyendaCortina").textContent = l.abajo ? "Cortina abajo" : "Cortina arriba";
+    $("leyendaPorcentaje").textContent = Math.round(porcentaje) + " % · " + l.ang + "°";
   }
 
   function actualizarTabla() {
     const filas = datos.slice(-8).reverse().map((d) => {
       const tr = document.createElement("tr");
-      [hora(d.t), d.raw, formatoLux(d.lux), d.abajo ? "Abajo" : "Arriba"].forEach((v) => {
+      [hora(d.t), d.raw, formatoLux(d.lux)].forEach((v) => {
         const td = document.createElement("td");
         td.textContent = v;
         tr.appendChild(td);
       });
+      const td = document.createElement("td");
+      const pill = document.createElement("span");
+      pill.className = "pill" + (d.abajo ? " abajo" : "");
+      pill.textContent = d.abajo ? "Abajo" : "Arriba";
+      td.appendChild(pill);
+      tr.appendChild(td);
       return tr;
     });
     $("tabla").replaceChildren(...filas);
@@ -345,10 +632,33 @@
     $("eventosVacio").hidden = true;
   }
 
+  // Marcas fijas del medidor de lux (décadas y umbrales).
+  (function armarMedidor() {
+    const medidor = $("medidorLux");
+    for (let v = LUX_MIN_ESCALA; v <= LUX_MAX_ESCALA; v *= 10) {
+      const tic = document.createElement("span");
+      tic.className = "tic";
+      tic.style.left = (fraccionLux(v) * 100) + "%";
+      tic.textContent = v >= 1000 ? v / 1000 + "k" : v;
+      medidor.appendChild(tic);
+    }
+    [LUX_ABIERTA, LUX_CERRADA].forEach((v) => {
+      const u = document.createElement("span");
+      u.className = "umbral";
+      u.style.left = (fraccionLux(v) * 100) + "%";
+      u.title = v + " lux";
+      medidor.appendChild(u);
+    });
+  })();
+
   // ---------- Gráfica ----------
   const canvas = $("grafica");
   const ctx = canvas.getContext("2d");
-  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  function conAlpha(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
 
   function linea(x1, y1, x2, y2) {
     ctx.beginPath();
@@ -357,7 +667,13 @@
     ctx.stroke();
   }
 
-  function punto(x, y) {
+  function punto(x, y, halo) {
+    if (halo) {
+      ctx.beginPath();
+      ctx.arc(x, y, 11, 0, Math.PI * 2);
+      ctx.fillStyle = conAlpha(css("--series"), 0.18);
+      ctx.fill();
+    }
     ctx.beginPath();
     ctx.arc(x, y, 6, 0, Math.PI * 2);
     ctx.fillStyle = css("--surface");
@@ -378,14 +694,19 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
-    const m = { l: 44, r: 72, t: 10, b: 28 };
+    const m = { l: 44, r: 16, t: 12, b: 28 };
     const pw = w - m.l - m.r, ph = h - m.t - m.b;
     const fin = datos.length ? datos[datos.length - 1].t : Date.now();
     const inicio = fin - VENTANA_MS;
     const x = (t) => m.l + ((t - inicio) / VENTANA_MS) * pw;
     const y = (v) => m.t + (1 - fraccionLux(v)) * ph;
+    const serie = css("--series");
     ctx.font = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.lineWidth = 1;
+
+    // Zona de cierre gradual (entre los dos umbrales), muy tenue.
+    ctx.fillStyle = conAlpha(serie, 0.06);
+    ctx.fillRect(m.l, y(LUX_CERRADA), pw, y(LUX_ABIERTA) - y(LUX_CERRADA));
 
     // Rejilla y ejes (escala logarítmica: una línea por década)
     ctx.textAlign = "right";
@@ -402,15 +723,15 @@
       ctx.fillText(s === 0 ? "ahora" : "-" + s + " s", x(fin - s * 1000), m.t + ph + 8);
     }
 
-    // Rango de cierre gradual
+    // Umbrales, con la etiqueta dentro del área de la gráfica (sobre la línea)
     ctx.setLineDash([4, 4]);
     ctx.strokeStyle = css("--ink-2");
     ctx.fillStyle = css("--ink-2");
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
     [[LUX_CERRADA, "100% cerrada"], [LUX_ABIERTA, "100% abierta"]].forEach(([v, txt]) => {
       linea(m.l, y(v), m.l + pw, y(v));
-      ctx.fillText(v + " lux " + txt, m.l + pw + 8, y(v));
+      ctx.fillText(v + " lux · " + txt, m.l + pw - 4, y(v) - 3);
     });
     ctx.setLineDash([]);
 
@@ -425,7 +746,20 @@
       return;
     }
 
-    ctx.strokeStyle = css("--series");
+    // Área bajo la línea
+    const degradado = ctx.createLinearGradient(0, m.t, 0, m.t + ph);
+    degradado.addColorStop(0, conAlpha(serie, 0.28));
+    degradado.addColorStop(1, conAlpha(serie, 0));
+    ctx.beginPath();
+    vis.forEach((d, i) => (i ? ctx.lineTo(x(d.t), y(d.lux)) : ctx.moveTo(x(d.t), y(d.lux))));
+    ctx.lineTo(x(vis[vis.length - 1].t), m.t + ph);
+    ctx.lineTo(x(vis[0].t), m.t + ph);
+    ctx.closePath();
+    ctx.fillStyle = degradado;
+    ctx.fill();
+
+    // Línea
+    ctx.strokeStyle = serie;
     ctx.lineWidth = 2;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
@@ -437,10 +771,10 @@
       ctx.strokeStyle = css("--muted");
       ctx.lineWidth = 1;
       linea(x(hover.t), m.t, x(hover.t), m.t + ph);
-      punto(x(hover.t), y(hover.lux));
+      punto(x(hover.t), y(hover.lux), false);
     } else {
       const ult = vis[vis.length - 1];
-      punto(x(ult.t), y(ult.lux));
+      punto(x(ult.t), y(ult.lux), true);
     }
   }
 
@@ -595,6 +929,8 @@
     $("btnConectar").disabled = true;
   }
   dibujar();
+  // ?demo en la URL arranca la demo sola (útil para revisar el diseño sin la placa).
+  if (new URLSearchParams(location.search).has("demo")) iniciarDemo();
 </script>
 </body>
 </html>
