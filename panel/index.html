@@ -191,9 +191,9 @@
         <div class="nota">Baja con ≥ 300 lux · sube con ≤ 100 lux</div>
       </div>
       <div class="indicador">
-        <div class="etiqueta">Lectura del sensor (raw)</div>
-        <div class="valor" id="vRaw">—</div>
-        <div class="nota">Rango 0 – 4095</div>
+        <div class="etiqueta">% de la cortina</div>
+        <div class="valor" id="vPorcentaje">—</div>
+        <div class="nota">0% arriba · 100% abajo</div>
       </div>
       <div class="indicador">
         <div class="etiqueta">Cortina</div>
@@ -296,7 +296,7 @@
 
   function actualizarIndicadores(l) {
     $("vLuz").textContent = formatoLux(l.lux);
-    $("vRaw").textContent = l.raw;
+    $("vPorcentaje").textContent = Math.round((l.ang / 180) * 100) + " %";
     $("vCortina").textContent = l.abajo ? "▼ Abajo" : "▲ Arriba";
     $("vAngulo").textContent = "Servo a " + l.ang + "°";
   }
