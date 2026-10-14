@@ -5,11 +5,13 @@
  * Cableado del módulo (letras impresas de izquierda a derecha):
  *   AO -> D34   |   DO -> sin conectar   |   GND -> GND   |   VCC -> 3V3
  *
- *   Muchos lux -> se BAJA la cortina
- *   Pocos lux  -> se SUBE la cortina
+ * La cortina se mueve de forma GRADUAL y proporcional a la cantidad de luz:
+ * con poca luz queda abierta, con mucha luz queda cerrada, y con valores
+ * intermedios (por ejemplo la linterna de un celular desde lejos o en
+ * ángulo) queda parcialmente cerrada. No es un interruptor de todo o nada.
  *
- * La cortina se representa con un servo (SG90) y el LED de la placa
- * se enciende mientras la cortina está abajo.
+ * La cortina se representa con un servo (SG90) y el LED de la placa se
+ * enciende cuando está más cerrada que abierta (pasado el punto medio).
  *
  * Nota sobre los lux: este módulo es una fotorresistencia genérica sin hoja
  * de datos exacta, así que el valor de lux es una ESTIMACIÓN (orden de
@@ -38,12 +40,19 @@ const float R_FIJO_KOHM = 10.0;
 const float LDR_COEF  = 32.0;
 const float LDR_GAMMA = 0.7;
 
-// ------------- Umbrales (con histéresis) -------------
-// Entre los dos umbrales la cortina se queda como está, así no "tiembla"
-// cuando la lectura está justo en el límite. Ajusta estos valores viendo
-// los lux reales de tu cuarto en el Monitor Serie o en localhost:8080.
-const float LUX_PARA_BAJAR = 300.0;  // lux a partir del cual se baja
-const float LUX_PARA_SUBIR = 100.0;  // lux por debajo del cual se sube
+// ------------- Rango de lux para la posición de la cortina -------------
+// Entre estos dos valores la cortina se mueve GRADUALMENTE, en proporción
+// directa a los lux medidos. Pensado para probar con la linterna de un
+// celular desde distintas distancias, ángulos e intensidades: mientras más
+// cerca y directo apunte, más se cierra; de lejos o en ángulo, se cierra
+// solo un poco.
+//   LUX_ABIERTA: en este nivel de lux (o menos) la cortina queda 100% abierta.
+//   LUX_CERRADA: en este nivel de lux (o más) la cortina queda 100% cerrada.
+// Si notas que cualquier lucecita ya cierra la cortina del todo, sube
+// LUX_CERRADA. Revisa los lux reales de tu cuarto en el Monitor Serie o en
+// el panel localhost:8080 antes de ajustar.
+const float LUX_ABIERTA = 80.0;
+const float LUX_CERRADA = 1500.0;
 
 // ------------- Servo -------------
 const int ANGULO_SUBIDA = 0;
@@ -52,14 +61,12 @@ const int MS_POR_GRADO  = 15;   // velocidad del movimiento (más alto = más le
 
 const unsigned long INTERVALO_LECTURA_MS = 500;
 
-enum EstadoCortina { SUBIDA, BAJADA };
-
-Servo servo;
-EstadoCortina estado;
 int anguloActual;
 int anguloObjetivo;
 unsigned long ultimoPasoServo = 0;
 unsigned long ultimaLectura = 0;
+
+Servo servo;
 
 int leerSensorPromedio() {
   long suma = 0;
@@ -78,12 +85,13 @@ float calcularLux(int raw) {
   return pow(LDR_COEF / rLdrKohm, 1.0 / LDR_GAMMA);
 }
 
-void cambiarEstado(EstadoCortina nuevo) {
-  estado = nuevo;
-  anguloObjetivo = (estado == BAJADA) ? ANGULO_BAJADA : ANGULO_SUBIDA;
-  digitalWrite(PIN_LED, estado == BAJADA ? HIGH : LOW);
-  Serial.println(estado == BAJADA ? ">>> Muchos lux: BAJANDO cortina"
-                                  : ">>> Pocos lux: SUBIENDO cortina");
+// Traduce los lux a un ángulo de servo, interpolando linealmente entre
+// LUX_ABIERTA (0°) y LUX_CERRADA (180°). Esto es lo que hace que el cierre
+// sea gradual en vez de un interruptor todo-o-nada.
+int calcularAnguloObjetivo(float lux) {
+  float acotado = constrain(lux, LUX_ABIERTA, LUX_CERRADA);
+  float fraccion = (acotado - LUX_ABIERTA) / (LUX_CERRADA - LUX_ABIERTA);
+  return (int)round(ANGULO_SUBIDA + fraccion * (ANGULO_BAJADA - ANGULO_SUBIDA));
 }
 
 // Mueve el servo un grado cada MS_POR_GRADO sin bloquear el loop.
@@ -93,6 +101,7 @@ void moverServoSuave() {
   ultimoPasoServo = millis();
   anguloActual += (anguloObjetivo > anguloActual) ? 1 : -1;
   servo.write(anguloActual);
+  digitalWrite(PIN_LED, anguloActual > 90 ? HIGH : LOW);
 }
 
 void setup() {
@@ -104,11 +113,11 @@ void setup() {
   servo.setPeriodHertz(50);
   servo.attach(PIN_SERVO, 500, 2400);
 
-  // Estado inicial según la primera lectura, sin animación.
-  float lux = calcularLux(leerSensorPromedio());
-  cambiarEstado(lux >= LUX_PARA_BAJAR ? BAJADA : SUBIDA);
+  // Posición inicial según la primera lectura, sin animación.
+  anguloObjetivo = calcularAnguloObjetivo(calcularLux(leerSensorPromedio()));
   anguloActual = anguloObjetivo;
   servo.write(anguloActual);
+  digitalWrite(PIN_LED, anguloActual > 90 ? HIGH : LOW);
 
   Serial.println("Simulador de cortinas listo.");
 }
@@ -121,13 +130,15 @@ void loop() {
 
   int raw = leerSensorPromedio();
   float lux = calcularLux(raw);
+  int nuevoObjetivo = calcularAnguloObjetivo(lux);
 
-  if (estado == SUBIDA && lux >= LUX_PARA_BAJAR) {
-    cambiarEstado(BAJADA);
-  } else if (estado == BAJADA && lux <= LUX_PARA_SUBIR) {
-    cambiarEstado(SUBIDA);
+  if (nuevoObjetivo == ANGULO_BAJADA && anguloObjetivo != ANGULO_BAJADA) {
+    Serial.println(">>> Llega al tope de lux: cortina 100% cerrada");
+  } else if (nuevoObjetivo == ANGULO_SUBIDA && anguloObjetivo != ANGULO_SUBIDA) {
+    Serial.println(">>> Baja del piso de lux: cortina 100% abierta");
   }
+  anguloObjetivo = nuevoObjetivo;
 
   Serial.printf("raw: %4d | lux: %7.1f | cortina: %s (%d°)\n",
-                raw, lux, estado == BAJADA ? "ABAJO " : "ARRIBA", anguloActual);
+                raw, lux, anguloActual > 90 ? "ABAJO " : "ARRIBA", anguloActual);
 }

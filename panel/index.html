@@ -188,7 +188,7 @@
       <div class="indicador">
         <div class="etiqueta">Luz (lux estimados)</div>
         <div class="valor" id="vLuz">—</div>
-        <div class="nota">Baja con ≥ 300 lux · sube con ≤ 100 lux</div>
+        <div class="nota">Abierta ≤ 80 lux · cerrada ≥ 1500 lux (gradual)</div>
       </div>
       <div class="indicador">
         <div class="etiqueta">% de la cortina</div>
@@ -233,9 +233,9 @@
 </main>
 
 <script>
-  // Deben coincidir con LUX_PARA_BAJAR / LUX_PARA_SUBIR de src/main.cpp
-  const UMBRAL_BAJAR = 300;
-  const UMBRAL_SUBIR = 100;
+  // Deben coincidir con LUX_ABIERTA / LUX_CERRADA de src/main.cpp
+  const LUX_ABIERTA = 80;
+  const LUX_CERRADA = 1500;
   const LUX_MIN_ESCALA = 1;      // piso de la escala logarítmica
   const LUX_MAX_ESCALA = 10000;  // techo de la escala logarítmica
   const VENTANA_MS = 120000;
@@ -402,13 +402,13 @@
       ctx.fillText(s === 0 ? "ahora" : "-" + s + " s", x(fin - s * 1000), m.t + ph + 8);
     }
 
-    // Umbrales
+    // Rango de cierre gradual
     ctx.setLineDash([4, 4]);
     ctx.strokeStyle = css("--ink-2");
     ctx.fillStyle = css("--ink-2");
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    [[UMBRAL_BAJAR, "baja"], [UMBRAL_SUBIR, "sube"]].forEach(([v, txt]) => {
+    [[LUX_CERRADA, "100% cerrada"], [LUX_ABIERTA, "100% abierta"]].forEach(([v, txt]) => {
       linea(m.l, y(v), m.l + pw, y(v));
       ctx.fillText(v + " lux " + txt, m.l + pw + 8, y(v));
     });
@@ -568,17 +568,14 @@
       // Barre ~2 a ~2000 lux en forma de onda, como un día simulado.
       const lux = Math.round(Math.pow(10, 1.5 + 1.3 * Math.sin(demo.fase) + ruido));
       const raw = Math.round(4095 * (1 - fraccionLux(lux)));
-      if (!demo.abajo && lux >= UMBRAL_BAJAR) {
-        demo.abajo = true;
-        procesarLinea(">>> Muchos lux: BAJANDO cortina");
-      } else if (demo.abajo && lux <= UMBRAL_SUBIR) {
-        demo.abajo = false;
-        procesarLinea(">>> Pocos lux: SUBIENDO cortina");
-      }
-      const objetivo = demo.abajo ? 180 : 0;
+      // Ángulo objetivo proporcional a los lux (cierre gradual), igual que el firmware.
+      const acotado = Math.min(LUX_CERRADA, Math.max(LUX_ABIERTA, lux));
+      const fraccionCierre = (acotado - LUX_ABIERTA) / (LUX_CERRADA - LUX_ABIERTA);
+      const objetivo = Math.round(fraccionCierre * 180);
+      demo.abajo = demo.ang > 90;
       demo.ang += Math.max(-33, Math.min(33, objetivo - demo.ang));
       procesarLinea("raw: " + raw + " | lux: " + lux +
-        " | cortina: " + (demo.abajo ? "ABAJO " : "ARRIBA") + " (" + demo.ang + "°)");
+        " | cortina: " + (demo.ang > 90 ? "ABAJO " : "ARRIBA") + " (" + demo.ang + "°)");
     }, 500);
   }
 
