@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de cortinas</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --series: #2a78d6;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --frame: #8a6d4b;
+    --fabric: #d9c3a0;
+    --fabric-fold: #c4aa82;
+    --sky-low: #5b6b7d;
+    --sky-high: #cde2fb;
+    --sun: #fab219;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --series: #3987e5;
+      --frame: #6b5439;
+      --fabric: #a8916d;
+      --fabric-fold: #8f7a58;
+      --sky-low: #1f2a36;
+      --sky-high: #6da7ec;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+    justify-content: space-between; margin-bottom: 20px;
+  }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--ink-2); margin: 2px 0 0; font-size: 14px; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    border-radius: 8px; padding: 8px 14px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  }
+  button.primario { background: var(--series); border-color: var(--series); color: #fff; }
+  button:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+  .estado {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--ink-2);
+  }
+  .estado::before {
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+  }
+  .estado[data-tipo="ok"]::before { background: var(--good); }
+  .estado[data-tipo="error"]::before { background: var(--critical); }
+
+  .aviso {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--critical);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 14px;
+  }
+
+  .tarjeta {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+  }
+  .tarjeta h2 { font-size: 14px; font-weight: 600; margin: 0 0 12px; color: var(--ink-2); }
+
+  .fila { display: grid; gap: 16px; margin-bottom: 16px; }
+  .fila-superior { grid-template-columns: minmax(220px, 300px) 1fr; }
+  .fila-inferior { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 760px) {
+    .fila-superior, .fila-inferior { grid-template-columns: 1fr; }
+  }
+
+  /* Ventana con cortina */
+  .ventana {
+    position: relative; width: 100%; max-width: 260px; margin: 0 auto;
+    aspect-ratio: 4 / 5; border: 10px solid var(--frame); border-radius: 6px;
+    overflow: hidden;
+  }
+  .cielo { position: absolute; inset: 0; background: var(--sky-low); transition: background 0.6s; }
+  .cielo::before, .cielo::after { content: ""; position: absolute; background: var(--frame); }
+  .cielo::before { left: 50%; top: 0; bottom: 0; width: 6px; transform: translateX(-50%); }
+  .cielo::after { top: 50%; left: 0; right: 0; height: 6px; transform: translateY(-50%); }
+  .sol {
+    position: absolute; top: 14%; right: 14%; width: 22%; aspect-ratio: 1;
+    border-radius: 50%; background: var(--sun); opacity: 0; transition: opacity 0.6s;
+    box-shadow: 0 0 24px var(--sun);
+  }
+  .cortina {
+    position: absolute; top: 0; left: 0; right: 0; height: 0%;
+    background: repeating-linear-gradient(90deg, var(--fabric) 0 14px, var(--fabric-fold) 14px 18px);
+    border-bottom: 6px solid var(--frame);
+    transition: height 0.5s linear;
+  }
+  .leyenda-ventana { text-align: center; margin: 12px 0 0; font-weight: 600; }
+  .leyenda-ventana span { color: var(--ink-2); font-weight: 400; }
+
+  /* Indicadores */
+  .indicadores { display: grid; grid-template-columns: 1fr; gap: 12px; align-content: start; }
+  .indicador { background: var(--page); border-radius: 10px; padding: 12px 14px; }
+  .indicador .etiqueta { font-size: 13px; color: var(--ink-2); }
+  .indicador .valor { font-size: 30px; font-weight: 700; line-height: 1.2; }
+  .indicador .nota { font-size: 12px; color: var(--muted); }
+
+  /* Gráfica */
+  .grafica-caja { position: relative; height: 260px; }
+  canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+  .tooltip {
+    position: absolute; pointer-events: none; min-width: 150px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+  .tooltip .hora { color: var(--muted); font-size: 12px; }
+  .tooltip .principal { display: flex; align-items: center; gap: 6px; }
+  .tooltip .principal b { font-size: 16px; }
+  .tooltip .clave { width: 14px; height: 2px; background: var(--series); border-radius: 1px; }
+  .tooltip .resto { color: var(--ink-2); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child, th:last-child, td:last-child { text-align: left; }
+  th { color: var(--ink-2); font-weight: 600; font-size: 13px; }
+
+  ol.eventos { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; font-size: 14px; }
+  ol.eventos li { padding: 5px 0; border-bottom: 1px solid var(--grid); }
+  ol.eventos time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 8px; }
+  ol.eventos li.accion { font-weight: 600; }
+  .vacio { color: var(--muted); font-size: 14px; }
+
+  footer { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Panel de cortinas automáticas</h1>
+      <p class="sub">ESP32 · sensor de luz MH-Sensor-Series (LDR)</p>
+    </div>
+    <div class="acciones">
+      <span class="estado" id="estado" data-tipo="off">Desconectado</span>
+      <button class="primario" id="btnConectar">Conectar ESP32</button>
+      <button id="btnDemo">Modo demo</button>
+    </div>
+  </header>
+
+  <div class="aviso" id="avisoNavegador" hidden>
+    Este navegador no permite leer el puerto USB. Abre esta página en <b>Google Chrome</b> o <b>Microsoft Edge</b>.
+    Puedes usar el modo demo mientras tanto.
+  </div>
+
+  <section class="fila fila-superior">
+    <div class="tarjeta">
+      <h2>Cortina</h2>
+      <div class="ventana" aria-hidden="true">
+        <div class="cielo" id="cielo"><div class="sol" id="sol"></div></div>
+        <div class="cortina" id="cortina"></div>
+      </div>
+      <p class="leyenda-ventana" id="leyendaCortina">Sin datos</p>
+    </div>
+
+    <div class="tarjeta indicadores">
+      <div class="indicador">
+        <div class="etiqueta">Luz</div>
+        <div class="valor" id="vLuz">—</div>
+        <div class="nota">Baja con ≥ 60 % · sube con ≤ 40 %</div>
+      </div>
+      <div class="indicador">
+        <div class="etiqueta">Lectura del sensor (raw)</div>
+        <div class="valor" id="vRaw">—</div>
+        <div class="nota">Rango 0 – 4095</div>
+      </div>
+      <div class="indicador">
+        <div class="etiqueta">Cortina</div>
+        <div class="valor" id="vCortina">—</div>
+        <div class="nota" id="vAngulo">Ángulo del servo</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta fila">
+    <h2>Luz, últimos 2 minutos (%)</h2>
+    <div class="grafica-caja" id="graficaCaja">
+      <canvas id="grafica" role="img" aria-label="Gráfica de la luz en el tiempo"></canvas>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </div>
+  </section>
+
+  <section class="fila fila-inferior">
+    <div class="tarjeta">
+      <h2>Últimas lecturas</h2>
+      <table>
+        <thead><tr><th>Hora</th><th>Raw</th><th>Luz</th><th>Cortina</th></tr></thead>
+        <tbody id="tabla"></tbody>
+      </table>
+      <p class="vacio" id="tablaVacia">Aún no hay lecturas.</p>
+    </div>
+    <div class="tarjeta">
+      <h2>Eventos</h2>
+      <ol class="eventos" id="eventos"></ol>
+      <p class="vacio" id="eventosVacio">Aún no hay eventos.</p>
+    </div>
+  </section>
+
+  <footer>
+    Cierra el Monitor Serie de VS Code antes de conectar: solo un programa puede usar el puerto COM a la vez.
+  </footer>
+</main>
+
+<script>
+  // Deben coincidir con LUZ_PARA_BAJAR / LUZ_PARA_SUBIR de src/main.cpp
+  const UMBRAL_BAJAR = 60;
+  const UMBRAL_SUBIR = 40;
+  const VENTANA_MS = 120000;
+  const MAX_PUNTOS = 600;
+  const BAUDIOS = 115200;
+
+  const $ = (id) => document.getElementById(id);
+  const datos = [];
+  let hover = null;
+  let geo = null;
+
+  // ---------- Entrada de datos ----------
+  const RE_LECTURA = /raw:\s*(\d+)\s*\|\s*luz:\s*(\d+)%\s*\|\s*cortina:\s*(ABAJO|ARRIBA)\s*\((-?\d+)/;
+
+  function procesarLinea(linea) {
+    linea = linea.trim();
+    if (!linea) return;
+    const m = RE_LECTURA.exec(linea);
+    if (m) {
+      agregarLectura({
+        t: Date.now(), raw: +m[1], luz: +m[2], abajo: m[3] === "ABAJO", ang: +m[4],
+      });
+    } else if (linea.startsWith(">>>")) {
+      registrarEvento(linea.replace(/^>>>\s*/, ""), true);
+    } else if (/^[\x20-\x7E -ÿ]+$/.test(linea)) {
+      registrarEvento(linea, false);  // mensajes de arranque; se ignora la basura binaria
+    }
+  }
+
+  function agregarLectura(l) {
+    datos.push(l);
+    if (datos.length > MAX_PUNTOS) datos.shift();
+    actualizarIndicadores(l);
+    actualizarCortina(l);
+    actualizarTabla();
+    dibujar();
+  }
+
+  function limpiar() {
+    datos.length = 0;
+    hover = null;
+    $("tooltip").hidden = true;
+    $("tabla").replaceChildren();
+    $("tablaVacia").hidden = false;
+    dibujar();
+  }
+
+  // ---------- Vista ----------
+  const hora = (t) => new Date(t).toLocaleTimeString("es", { hour12: false });
+
+  function actualizarIndicadores(l) {
+    $("vLuz").textContent = l.luz + " %";
+    $("vRaw").textContent = l.raw;
+    $("vCortina").textContent = l.abajo ? "▼ Abajo" : "▲ Arriba";
+    $("vAngulo").textContent = "Servo a " + l.ang + "°";
+  }
+
+  function mezclar(a, b, f) {
+    const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    const c = [16, 8, 0].map((s) => Math.round(((pa >> s) & 255) * (1 - f) + ((pb >> s) & 255) * f));
+    return "rgb(" + c.join(",") + ")";
+  }
+
+  function actualizarCortina(l) {
+    $("cortina").style.height = Math.max(0, Math.min(100, (l.ang / 180) * 100)) + "%";
+    $("cielo").style.background = mezclar(css("--sky-low"), css("--sky-high"), l.luz / 100);
+    $("sol").style.opacity = Math.max(0, (l.luz - 30) / 70);
+    const leyenda = $("leyendaCortina");
+    leyenda.replaceChildren(
+      document.createTextNode(l.abajo ? "Cortina abajo " : "Cortina arriba "),
+      Object.assign(document.createElement("span"), { textContent: "· " + l.ang + "°" })
+    );
+  }
+
+  function actualizarTabla() {
+    const filas = datos.slice(-8).reverse().map((d) => {
+      const tr = document.createElement("tr");
+      [hora(d.t), d.raw, d.luz + " %", d.abajo ? "Abajo" : "Arriba"].forEach((v) => {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+      return tr;
+    });
+    $("tabla").replaceChildren(...filas);
+    $("tablaVacia").hidden = filas.length > 0;
+  }
+
+  function registrarEvento(texto, esAccion) {
+    const li = document.createElement("li");
+    if (esAccion) li.className = "accion";
+    const time = document.createElement("time");
+    time.textContent = hora(Date.now());
+    li.append(time, document.createTextNode(texto));
+    const lista = $("eventos");
+    lista.prepend(li);
+    while (lista.children.length > 50) lista.lastChild.remove();
+    $("eventosVacio").hidden = true;
+  }
+
+  // ---------- Gráfica ----------
+  const canvas = $("grafica");
+  const ctx = canvas.getContext("2d");
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  function linea(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  function punto(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = css("--surface");
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = css("--series");
+    ctx.fill();
+  }
+
+  function dibujar() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const m = { l: 44, r: 72, t: 10, b: 28 };
+    const pw = w - m.l - m.r, ph = h - m.t - m.b;
+    const fin = datos.length ? datos[datos.length - 1].t : Date.now();
+    const inicio = fin - VENTANA_MS;
+    const x = (t) => m.l + ((t - inicio) / VENTANA_MS) * pw;
+    const y = (v) => m.t + (1 - v / 100) * ph;
+    ctx.font = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.lineWidth = 1;
+
+    // Rejilla y ejes
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    [0, 25, 50, 75, 100].forEach((v) => {
+      ctx.strokeStyle = v === 0 ? css("--axis") : css("--grid");
+      linea(m.l, y(v), m.l + pw, y(v));
+      ctx.fillStyle = css("--muted");
+      ctx.fillText(v + "%", m.l - 8, y(v));
+    });
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (let s = 120; s >= 0; s -= 30) {
+      ctx.fillText(s === 0 ? "ahora" : "-" + s + " s", x(fin - s * 1000), m.t + ph + 8);
+    }
+
+    // Umbrales
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = css("--ink-2");
+    ctx.fillStyle = css("--ink-2");
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    [[UMBRAL_BAJAR, "baja"], [UMBRAL_SUBIR, "sube"]].forEach(([v, txt]) => {
+      linea(m.l, y(v), m.l + pw, y(v));
+      ctx.fillText(v + "% " + txt, m.l + pw + 8, y(v));
+    });
+    ctx.setLineDash([]);
+
+    const vis = datos.filter((d) => d.t >= inicio);
+    geo = { x, y, vis, m, ph };
+
+    if (!vis.length) {
+      ctx.fillStyle = css("--muted");
+      ctx.textAlign = "center";
+      ctx.font = '14px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillText("Conecta el ESP32 o activa el modo demo", m.l + pw / 2, m.t + ph / 2);
+      return;
+    }
+
+    ctx.strokeStyle = css("--series");
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    vis.forEach((d, i) => (i ? ctx.lineTo(x(d.t), y(d.luz)) : ctx.moveTo(x(d.t), y(d.luz))));
+    ctx.stroke();
+
+    if (hover && hover.t >= inicio) {
+      ctx.strokeStyle = css("--muted");
+      ctx.lineWidth = 1;
+      linea(x(hover.t), m.t, x(hover.t), m.t + ph);
+      punto(x(hover.t), y(hover.luz));
+    } else {
+      const ult = vis[vis.length - 1];
+      punto(x(ult.t), y(ult.luz));
+    }
+  }
+
+  function mostrarTooltip(d) {
+    const tip = $("tooltip");
+    const fila = (texto) => Object.assign(document.createElement("div"), { textContent: texto });
+    const principal = document.createElement("div");
+    principal.className = "principal";
+    const clave = document.createElement("span");
+    clave.className = "clave";
+    const valor = document.createElement("b");
+    valor.textContent = d.luz + " %";
+    principal.append(clave, valor, document.createTextNode(" luz"));
+    const resto = document.createElement("div");
+    resto.className = "resto";
+    resto.append(fila("Raw " + d.raw), fila("Cortina " + (d.abajo ? "abajo" : "arriba") + " · " + d.ang + "°"));
+    const horaEl = fila(hora(d.t));
+    horaEl.className = "hora";
+    tip.replaceChildren(horaEl, principal, resto);
+    tip.hidden = false;
+
+    const caja = $("graficaCaja");
+    const px = geo.x(d.t);
+    let left = px + 14;
+    if (left + tip.offsetWidth > caja.clientWidth) left = px - tip.offsetWidth - 14;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = Math.max(0, Math.min(geo.y(d.luz) - tip.offsetHeight / 2, caja.clientHeight - tip.offsetHeight)) + "px";
+  }
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!geo || !geo.vis.length) return;
+    const px = e.clientX - canvas.getBoundingClientRect().left;
+    let mejor = null, distancia = Infinity;
+    for (const d of geo.vis) {
+      const dx = Math.abs(geo.x(d.t) - px);
+      if (dx < distancia) { distancia = dx; mejor = d; }
+    }
+    hover = mejor;
+    dibujar();
+    mostrarTooltip(mejor);
+  });
+  canvas.addEventListener("pointerleave", () => {
+    hover = null;
+    $("tooltip").hidden = true;
+    dibujar();
+  });
+  new ResizeObserver(dibujar).observe(canvas);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    dibujar();
+    if (datos.length) actualizarCortina(datos[datos.length - 1]);
+  });
+
+  // ---------- Conexión serie (Web Serial) ----------
+  let puerto = null;
+  let lector = null;
+
+  function setEstado(tipo, texto) {
+    const el = $("estado");
+    el.dataset.tipo = tipo;
+    el.textContent = texto;
+  }
+
+  async function conectar() {
+    try {
+      puerto = await navigator.serial.requestPort();
+      await puerto.open({ baudRate: BAUDIOS });
+    } catch (e) {
+      puerto = null;
+      if (e.name !== "NotFoundError") {  // NotFoundError = el usuario cerró el diálogo
+        setEstado("error", "No se pudo abrir el puerto");
+        registrarEvento("No se pudo abrir el puerto. ¿Está abierto el Monitor Serie de VS Code o se está subiendo el programa?", false);
+      }
+      return;
+    }
+    detenerDemo();
+    limpiar();
+    setEstado("ok", "Conectado al ESP32");
+    $("btnConectar").textContent = "Desconectar";
+    registrarEvento("Conectado al ESP32", false);
+
+    const decodificador = new TextDecoderStream();
+    const tuberia = puerto.readable.pipeTo(decodificador.writable).catch(() => {});
+    lector = decodificador.readable.getReader();
+    let buffer = "";
+    try {
+      while (true) {
+        const { value, done } = await lector.read();
+        if (done) break;
+        buffer += value;
+        const lineas = buffer.split(/\r?\n/);
+        buffer = lineas.pop();
+        lineas.forEach(procesarLinea);
+      }
+    } catch (e) {
+      registrarEvento("Se perdió la conexión: " + e.message, false);
+    } finally {
+      lector.releaseLock();
+      lector = null;
+    }
+    await tuberia;
+    await puerto.close().catch(() => {});
+    puerto = null;
+    setEstado("off", "Desconectado");
+    $("btnConectar").textContent = "Conectar ESP32";
+  }
+
+  $("btnConectar").addEventListener("click", () => {
+    if (lector) lector.cancel().catch(() => {});
+    else conectar();
+  });
+
+  // ---------- Modo demo (misma lógica que el ESP32) ----------
+  let demoTimer = null;
+  const demo = { fase: 0, abajo: false, ang: 0 };
+
+  function iniciarDemo() {
+    if (lector) lector.cancel().catch(() => {});
+    limpiar();
+    setEstado("ok", "Modo demo");
+    $("btnDemo").textContent = "Detener demo";
+    registrarEvento("Modo demo iniciado", false);
+    demoTimer = setInterval(() => {
+      demo.fase += 0.05;
+      const ruido = (Math.random() - 0.5) * 8;
+      const luz = Math.round(Math.min(100, Math.max(0, 50 + 45 * Math.sin(demo.fase) + ruido)));
+      const raw = Math.round(50 + (luz / 100) * (3000 - 50));
+      if (!demo.abajo && luz >= UMBRAL_BAJAR) {
+        demo.abajo = true;
+        procesarLinea(">>> Mucha luz: BAJANDO cortina");
+      } else if (demo.abajo && luz <= UMBRAL_SUBIR) {
+        demo.abajo = false;
+        procesarLinea(">>> Poca luz: SUBIENDO cortina");
+      }
+      const objetivo = demo.abajo ? 180 : 0;
+      demo.ang += Math.max(-33, Math.min(33, objetivo - demo.ang));
+      procesarLinea("raw: " + raw + " | luz: " + luz +
+        "% | cortina: " + (demo.abajo ? "ABAJO " : "ARRIBA") + " (" + demo.ang + "°)");
+    }, 500);
+  }
+
+  function detenerDemo() {
+    if (!demoTimer) return;
+    clearInterval(demoTimer);
+    demoTimer = null;
+    $("btnDemo").textContent = "Modo demo";
+    if (!lector) setEstado("off", "Desconectado");
+  }
+
+  $("btnDemo").addEventListener("click", () => (demoTimer ? detenerDemo() : iniciarDemo()));
+
+  if (!("serial" in navigator)) {
+    $("avisoNavegador").hidden = false;
+    $("btnConectar").disabled = true;
+  }
+  dibujar();
+</script>
+</body>
+</html>
