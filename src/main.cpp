@@ -64,12 +64,10 @@ const unsigned long INTERVALO_LECTURA_MS = 500;
 // ------------- Suavizado -------------
 // Una fotorresistencia amplifica mucho el ruido al convertirla a lux (la
 // curva es muy pronunciada), así que sin suavizar el ángulo objetivo salta
-// de un lado a otro varias veces por segundo. Dos filtros lo arreglan:
-//   1) Más muestras por lectura (abajo, en leerSensorPromedio), que filtran
-//      el parpadeo rápido del sensor.
-//   2) Un suavizado exponencial entre lecturas sucesivas: en vez de saltar
-//      directo al nuevo valor cada INTERVALO_LECTURA_MS, el lux "filtrado"
-//      se mueve solo una fracción FACTOR_SUAVIZADO hacia el nuevo dato.
+// de un lado a otro varias veces por segundo. Se corrige con un suavizado
+// exponencial entre lecturas sucesivas: en vez de saltar directo al nuevo
+// valor cada INTERVALO_LECTURA_MS, el lux "filtrado" se mueve solo una
+// fracción FACTOR_SUAVIZADO hacia el nuevo dato.
 // Baja FACTOR_SUAVIZADO para que sea más estable (pero más lenta para
 // reaccionar a un cambio real); súbelo para que reaccione más rápido (pero
 // con más temblor).
@@ -85,12 +83,11 @@ Servo servo;
 
 int leerSensorPromedio() {
   long suma = 0;
-  const int muestras = 20;
-  for (int i = 0; i < muestras; i++) {
+  for (int i = 0; i < 10; i++) {
     suma += analogRead(PIN_SENSOR);
-    delay(3);
+    delay(2);
   }
-  return suma / muestras;
+  return suma / 10;
 }
 
 // Convierte la lectura cruda del ADC (0-4095) a una estimación de lux.
