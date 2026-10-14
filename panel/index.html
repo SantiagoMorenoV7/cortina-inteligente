@@ -188,7 +188,7 @@
       <div class="indicador">
         <div class="etiqueta">Luz (lux estimados)</div>
         <div class="valor" id="vLuz">—</div>
-        <div class="nota">Abierta ≤ 80 lux · cerrada ≥ 1500 lux (gradual)</div>
+        <div class="nota">Abierta ≤ 80 lux · cerrada ≥ 9000 lux (gradual)</div>
       </div>
       <div class="indicador">
         <div class="etiqueta">% de la cortina</div>
@@ -235,7 +235,7 @@
 <script>
   // Deben coincidir con LUX_ABIERTA / LUX_CERRADA de src/main.cpp
   const LUX_ABIERTA = 80;
-  const LUX_CERRADA = 1500;
+  const LUX_CERRADA = 9000;
   const LUX_MIN_ESCALA = 1;      // piso de la escala logarítmica
   const LUX_MAX_ESCALA = 10000;  // techo de la escala logarítmica
   const VENTANA_MS = 120000;
@@ -565,8 +565,9 @@
     demoTimer = setInterval(() => {
       demo.fase += 0.05;
       const ruido = (Math.random() - 0.5) * 0.3;
-      // Barre ~2 a ~2000 lux en forma de onda, como un día simulado.
-      const lux = Math.round(Math.pow(10, 1.5 + 1.3 * Math.sin(demo.fase) + ruido));
+      // Barre ~1 a ~10000 lux en forma de onda, como probar una linterna
+      // acercándose y alejándose.
+      const lux = Math.round(Math.pow(10, 2.0 + 2.0 * Math.sin(demo.fase) + ruido));
       const raw = Math.round(4095 * (1 - fraccionLux(lux)));
       // Ángulo objetivo proporcional a los lux (cierre gradual), igual que el firmware.
       const acotado = Math.min(LUX_CERRADA, Math.max(LUX_ABIERTA, lux));

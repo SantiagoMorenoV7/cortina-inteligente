@@ -10,8 +10,8 @@ una luz fuerte y directa la cierra más.
 | Lux | Cortina |
 |---|---|
 | ≤ 80 (piso, por defecto) | **100% abierta** (servo a 0°) |
-| entre 80 y 1500 | cerrada **en proporción** a los lux (0°-180°) |
-| ≥ 1500 (tope, por defecto) | **100% cerrada** (servo a 180°, LED encendido) |
+| entre 80 y 9000 | cerrada **en proporción** a los lux (0°-180°) |
+| ≥ 9000 (tope, por defecto) | **100% cerrada** (servo a 180°, LED encendido) |
 
 > **Precisión de los lux:** esta fotorresistencia es genérica, sin hoja de
 > datos exacta, así que el valor de lux es una **estimación** (orden de

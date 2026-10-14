@@ -52,7 +52,7 @@ const float LDR_GAMMA = 0.7;
 // LUX_CERRADA. Revisa los lux reales de tu cuarto en el Monitor Serie o en
 // el panel localhost:8080 antes de ajustar.
 const float LUX_ABIERTA = 80.0;
-const float LUX_CERRADA = 1500.0;
+const float LUX_CERRADA = 9000.0;  // la linterna de un iPhone al máximo y cerca dio ~10.2k lux
 
 // ------------- Servo -------------
 const int ANGULO_SUBIDA = 0;
