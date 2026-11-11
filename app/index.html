@@ -1,0 +1,2165 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f0ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1013" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cortina">
+<title>Cortina inteligente</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8a33d'/%3E%3Crect x='12' y='12' width='40' height='5' rx='2.5' fill='%231b1d22'/%3E%3Cpath d='M15 18h14v30c-4 0-8-2-14-4z' fill='%231b1d22'/%3E%3Cpath d='M49 18H35v30c4 0 8-2 14-4z' fill='%231b1d22'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f3f0ea;
+  --card: #fffdf9;
+  --card2: #f6f2eb;
+  --ink: #1d1f24;
+  --muted: #6c707a;
+  --line: #e6e0d5;
+  --accent: #c97a12;
+  --accent-soft: #f6e3c4;
+  --accent-ink: #ffffff;
+  --abre: #23897d;
+  --cierra: #cf4f33;
+  --mantiene: #d9d2c5;
+  --ok: #2b8a5e;
+  --err: #cc3d3d;
+  --s-raw: #a7abb3;
+  --s-prom: #4f74d3;
+  --s-kal: #c97a12;
+  --marco: #e9e3d8;
+  --tela1: #c76b3a;
+  --tela2: #a9552b;
+  --tela3: #d8864f;
+  --sombra: 0 1px 2px rgba(40, 30, 10, .05), 0 8px 28px rgba(40, 30, 10, .06);
+  --radio: 20px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1013;
+    --card: #171a1f;
+    --card2: #1e2228;
+    --ink: #eceef1;
+    --muted: #9aa1ab;
+    --line: #2a2f37;
+    --accent: #f0a63e;
+    --accent-soft: #3a2c17;
+    --accent-ink: #1b1305;
+    --abre: #3db8a7;
+    --cierra: #ee7155;
+    --mantiene: #353a43;
+    --ok: #4cc38a;
+    --err: #ef6464;
+    --s-raw: #6b717b;
+    --s-prom: #7f9ef2;
+    --s-kal: #f0a63e;
+    --marco: #2a2e35;
+    --tela1: #a85a32;
+    --tela2: #8a4724;
+    --tela3: #b86a40;
+    --sombra: none;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
+}
+button, input, select { font: inherit; color: inherit; }
+h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; font-weight: 650; }
+h3 { font-size: 15px; margin: 0 0 4px; }
+p { margin: 0; }
+.mut { color: var(--muted); }
+.peq { font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }
+
+/* ---------- Barra superior ---------- */
+.top {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.logo { width: 36px; height: 36px; border-radius: 10px; flex: none; }
+.top .titulo { min-width: 0; flex: 1; }
+.top .titulo b { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pildora {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--muted);
+}
+.pildora::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.pildora.ok::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.pildora.demo::before { background: var(--accent); }
+.pildora.err::before { background: var(--err); }
+.reloj-top { font-size: 13px; color: var(--muted); }
+
+/* ---------- Estructura ---------- */
+main { max-width: 1100px; margin: 0 auto; padding: 6px 16px 28px; }
+.vista { display: none; gap: 16px; align-content: start; }
+.vista.activa { display: grid; }
+.card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radio); padding: 18px; box-shadow: var(--sombra);
+  min-width: 0;
+}
+.fila { display: flex; align-items: center; gap: 10px; }
+.fila.entre { justify-content: space-between; }
+.pila { display: grid; gap: 12px; }
+.sep { height: 1px; background: var(--line); margin: 14px 0; border: 0; }
+
+/* ---------- Avisos ---------- */
+.aviso {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 14px; font-size: 14px;
+  border: 1px solid var(--line); background: var(--card);
+}
+.aviso .txt { flex: 1 1 220px; }
+.aviso.err { border-color: color-mix(in srgb, var(--err) 45%, var(--line)); background: color-mix(in srgb, var(--err) 9%, var(--card)); }
+.aviso.demo { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 9%, var(--card)); }
+
+/* ---------- Botones y controles ---------- */
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--card2);
+  border-radius: 13px; padding: 10px 14px; min-height: 44px;
+  font-weight: 620; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .08s, background .2s, opacity .2s;
+}
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .42; cursor: default; }
+.btn.prim { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+.btn.peligro { color: var(--err); }
+.btn.peq { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 11px; }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.controles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.controles .btn { flex-direction: column; gap: 4px; min-height: 66px; font-size: 13.5px; }
+.controles .btn svg { width: 24px; height: 24px; }
+
+.seg {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  background: var(--card2); border: 1px solid var(--line);
+  border-radius: 13px; padding: 3px;
+}
+.seg button {
+  border: 0; background: none; padding: 8px 10px; border-radius: 10px;
+  font-weight: 620; color: var(--muted); cursor: pointer; min-height: 38px;
+}
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height: 28px; }
+input[type=text], input[type=number], input[type=password], input[type=time], select {
+  width: 100%; padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--card2); min-height: 44px;
+}
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label.campo { display: grid; gap: 6px; font-size: 13.5px; color: var(--muted); }
+label.campo > span { font-weight: 600; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.interruptor { display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; }
+.interruptor .t { min-width: 0; }
+.interruptor input {
+  appearance: none; flex: none; width: 46px; height: 28px; border-radius: 14px;
+  background: var(--mantiene); position: relative; cursor: pointer; transition: background .2s; margin: 0;
+}
+.interruptor input::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+  border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+.interruptor input:checked { background: var(--accent); }
+.interruptor input:checked::after { transform: translateX(18px); }
+
+/* ---------- Ventana / cortina ---------- */
+.ventana {
+  position: relative; aspect-ratio: 16 / 10; border-radius: 16px;
+  background: var(--marco); padding: 10px; overflow: hidden;
+}
+.riel { position: absolute; left: 6px; right: 6px; top: 6px; height: 8px; border-radius: 4px; background: #4a3f35; z-index: 3; }
+.vidrio { position: relative; height: 100%; border-radius: 8px; overflow: hidden; }
+.cielo {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--cielo1, #6aa7e8), var(--cielo2, #cfe6ff));
+  transition: background 1.2s;
+}
+.astro {
+  position: absolute; width: 17%; aspect-ratio: 1; border-radius: 50%;
+  right: 13%; top: 14%;
+  background: radial-gradient(circle, #fff6cf 0 40%, #ffd166 70%);
+  box-shadow: 0 0 40px 10px rgba(255, 209, 102, .55);
+  transition: opacity 1s, transform 1s;
+}
+.astro.luna { background: #eef1f7; box-shadow: inset -9px -3px 0 0 #c8cfdd, 0 0 22px 2px rgba(220, 230, 255, .25); }
+.cruz::before, .cruz::after { content: ""; position: absolute; background: var(--marco); z-index: 1; }
+.cruz::before { left: 50%; top: 0; bottom: 0; width: 6px; transform: translateX(-50%); }
+.cruz::after { top: 50%; left: 0; right: 0; height: 6px; transform: translateY(-50%); }
+.cortina {
+  position: absolute; z-index: 2; top: 0; bottom: 0; left: 0; width: 9%;
+  background: repeating-linear-gradient(90deg, var(--tela1) 0 12px, var(--tela2) 12px 17px, var(--tela3) 17px 26px);
+  box-shadow: 6px 0 18px rgba(0, 0, 0, .28);
+  transition: width .55s linear;
+}
+.cortina::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(0, 0, 0, .18)); }
+
+.estado-grande { font-size: 26px; font-weight: 720; letter-spacing: -.01em; margin-top: 16px; }
+.estado-detalle { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.pos-fila { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+/* ---------- Luz ---------- */
+.luz-valor { font-size: 44px; font-weight: 740; letter-spacing: -.02em; line-height: 1; }
+.luz-escala { font-size: 14px; color: var(--muted); font-weight: 500; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 650;
+  padding: 4px 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line);
+}
+.banda { position: relative; height: 12px; display: flex; margin: 28px 0 30px; }
+.banda .z { height: 100%; }
+.z.abre { background: color-mix(in srgb, var(--abre) 38%, transparent); border-radius: 6px 0 0 6px; }
+.z.mant { background: var(--mantiene); }
+.z.cierra { background: color-mix(in srgb, var(--cierra) 38%, transparent); border-radius: 0 6px 6px 0; }
+.marca { position: absolute; top: 50%; transform: translate(-50%, -50%); transition: left .45s; pointer-events: none; }
+.marca.filt { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); border: 3px solid var(--card); box-shadow: 0 1px 5px rgba(0, 0, 0, .35); z-index: 2; }
+.marca.raw { width: 3px; height: 24px; background: var(--ink); opacity: .5; border-radius: 2px; }
+.umbral-lbl { position: absolute; top: 18px; transform: translateX(-50%); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.umbral-lbl.arr { top: -22px; }
+.leyenda-banda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.leyenda-banda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.progreso { height: 6px; border-radius: 3px; background: var(--card2); overflow: hidden; margin-top: 8px; }
+.progreso > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+canvas { display: block; width: 100%; }
+#spark { height: 56px; margin-top: 12px; }
+#grafica { height: 260px; }
+
+/* ---------- Listas ---------- */
+.eventos { list-style: none; margin: 0; padding: 0; }
+.eventos li { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; align-items: baseline; }
+.eventos li:last-child { border-bottom: 0; }
+.eventos .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; transform: translateY(-1px); }
+.eventos .t1 .punto { background: var(--accent); }
+.eventos .t2 .punto { background: var(--err); }
+.eventos .cuando { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; padding-left: 8px; }
+.vacio { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+.horario {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--line);
+}
+.horario:last-child { border-bottom: 0; }
+.horario .hh { font-size: 26px; font-weight: 720; min-width: 76px; letter-spacing: -.01em; }
+.horario .info { flex: 1; min-width: 0; cursor: pointer; }
+.horario.off .hh, .horario.off .info { opacity: .45; }
+.dias-mini { display: flex; gap: 4px; margin-top: 4px; }
+.dias-mini span { font-size: 11px; width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.dias-mini span.on { background: var(--accent-soft); color: var(--ink); font-weight: 700; }
+.dias { display: flex; gap: 5px; flex-wrap: wrap; }
+.dias button {
+  width: 37px; height: 37px; border-radius: 50%; border: 1px solid var(--line); padding: 0;
+  background: var(--card2); font-weight: 700; cursor: pointer;
+}
+.dias button.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+
+.redes { list-style: none; margin: 8px 0 0; padding: 0; max-height: 240px; overflow: auto; }
+.redes li button {
+  width: 100%; display: flex; justify-content: space-between; gap: 10px; text-align: left;
+  padding: 10px 12px; border: 0; border-radius: 10px; background: none; cursor: pointer;
+}
+.redes li button:hover, .redes li button.on { background: var(--card2); }
+
+.datos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.dato { background: var(--card2); border-radius: 14px; padding: 10px 12px; }
+.dato .k { font-size: 12px; color: var(--muted); }
+.dato .v { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Matrices ---------- */
+.matrices { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 18px; }
+.mbloque { display: flex; align-items: center; gap: 8px; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+.mbloque b { font-family: inherit; font-size: 14px; }
+.mat { display: inline-grid; gap: 3px 12px; padding: 4px 9px; position: relative; text-align: right; font-variant-numeric: tabular-nums; }
+.mat::before, .mat::after { content: ""; position: absolute; top: 0; bottom: 0; width: 6px; border: 1.5px solid var(--ink); }
+.mat::before { left: 0; border-right: 0; border-radius: 4px 0 0 4px; }
+.mat::after { right: 0; border-left: 0; border-radius: 0 4px 4px 0; }
+.ecuaciones { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.8; background: var(--card2); border-radius: 12px; padding: 10px 14px; overflow-x: auto; white-space: nowrap; }
+
+.leyenda { display: flex; gap: 8px; flex-wrap: wrap; }
+.leyenda button {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--card2);
+  border-radius: 999px; padding: 4px 11px; font-size: 12.5px; cursor: pointer; font-weight: 600;
+}
+.leyenda button i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.leyenda button.off { opacity: .4; }
+
+.indicador { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.indicador::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--mantiene); }
+.indicador.on::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.jog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+/* ---------- Navegación ---------- */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; background: var(--card); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 9px 0 10px; border: 0; background: none; color: var(--muted);
+  font-size: 11.5px; font-weight: 620; cursor: pointer;
+}
+.tab svg { width: 24px; height: 24px; }
+.tab.on { color: var(--accent); }
+.marca-lateral { display: none; }
+
+@media (min-width: 900px) {
+  body { padding-bottom: 0; padding-left: 232px; }
+  .tabs {
+    top: 0; right: auto; width: 232px; flex-direction: column; gap: 4px;
+    border-top: 0; border-right: 1px solid var(--line); padding: 18px 12px;
+  }
+  .marca-lateral { display: flex; align-items: center; gap: 10px; padding: 4px 10px 22px; font-weight: 720; font-size: 16px; }
+  .marca-lateral img { width: 32px; height: 32px; border-radius: 9px; }
+  .tab { flex: none; flex-direction: row; gap: 12px; padding: 11px 12px; border-radius: 12px; font-size: 14.5px; }
+  .tab.on { background: var(--card2); }
+  .top .logo { display: none; }
+  .vista.activa { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ancho { grid-column: 1 / -1; }
+  #grafica { height: 320px; }
+}
+
+/* ---------- Diálogos y aviso flotante ---------- */
+dialog {
+  border: 0; border-radius: 22px; padding: 0; background: var(--card); color: var(--ink);
+  width: min(460px, calc(100vw - 24px)); max-height: calc(100vh - 40px); box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+}
+dialog::backdrop { background: rgba(10, 10, 12, .5); }
+.dlg { padding: 20px; display: grid; gap: 16px; }
+.dlg-pie { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+#toast {
+  position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 60;
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--bg); padding: 11px 16px; border-radius: 14px;
+  font-size: 14px; font-weight: 600; max-width: calc(100vw - 32px); transition: opacity .25s, transform .25s;
+}
+#toast.ver { opacity: 1; transform: translate(-50%, 0); }
+#toast.err { background: var(--err); color: #fff; }
+@media (min-width: 900px) { #toast { bottom: 28px; left: calc(50% + 116px); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-casa" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-sensor" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17c3 0 3-8 6-8s3 6 6 6 3-9 6-9"/><path d="M3 21h18"/></g></symbol>
+  <symbol id="i-reloj" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
+  <symbol id="i-ajustes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></g></symbol>
+  <symbol id="i-abrir" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18"/><path d="M5 4v15M19 4v15"/><path d="m14 12-4 0m0 0 2-2m-2 2 2 2"/></g></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18"/><path d="M5 4v15h14V4"/><path d="M9 4v15M14 4v15"/></g></symbol>
+  <symbol id="i-parar" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+</svg>
+
+<header class="top">
+  <img class="logo" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8a33d'/%3E%3Crect x='12' y='12' width='40' height='5' rx='2.5' fill='%231b1d22'/%3E%3Cpath d='M15 18h14v30c-4 0-8-2-14-4z' fill='%231b1d22'/%3E%3Cpath d='M49 18H35v30c4 0 8-2 14-4z' fill='%231b1d22'/%3E%3C/svg%3E">
+  <div class="titulo">
+    <b id="nombre">Cortina</b>
+    <span id="conexion" class="pildora">Conectando…</span>
+  </div>
+  <span id="relojTop" class="reloj-top num"></span>
+</header>
+
+<main>
+  <div class="pila" style="margin-bottom:16px">
+    <div id="avisoDemo" class="aviso demo" hidden>
+      <div class="txt"><b>Modo demostración.</b> <span id="avisoDemoTxt"></span> Todo funciona con un simulador que usa la misma lógica del ESP32.</div>
+      <button class="btn peq" id="btnReconectar">Buscar la cortina</button>
+    </div>
+    <div id="avisoSinConexion" class="aviso err" hidden>
+      <div class="txt"><b>Sin conexión con la cortina.</b> Revisa que estés conectado a su WiFi o a la misma red. Reintentando…</div>
+    </div>
+    <div id="avisoError" class="aviso err" hidden>
+      <div class="txt"><b>Problema con el motor.</b> <span id="avisoErrorTxt"></span>. Revisa el final de carrera y el cordel.</div>
+      <button class="btn peq" id="btnReintentarRef">Reintentar</button>
+    </div>
+  </div>
+
+  <!-- ====================== INICIO ====================== -->
+  <section class="vista activa" id="v-inicio">
+    <div class="card">
+      <div class="ventana" id="ventana" role="img" aria-label="Dibujo de la ventana con la cortina">
+        <div class="riel"></div>
+        <div class="vidrio">
+          <div class="cielo" id="cielo"></div>
+          <div class="astro" id="astro"></div>
+          <div class="cruz" style="position:absolute;inset:0"></div>
+          <div class="cortina" id="cortina"></div>
+        </div>
+      </div>
+      <div class="estado-grande" id="estadoTitulo">—</div>
+      <div class="estado-detalle" id="estadoDetalle">Conectando con la cortina…</div>
+
+      <div class="controles" style="margin-top:16px">
+        <button class="btn" id="btnAbrir"><svg><use href="#i-abrir"/></svg>Abrir</button>
+        <button class="btn" id="btnParar" disabled><svg><use href="#i-parar"/></svg>Parar</button>
+        <button class="btn" id="btnCerrar"><svg><use href="#i-cerrar"/></svg>Cerrar</button>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="fila entre peq"><span class="mut">Llevar a una posición</span><b class="num" id="sliderPosValor">0 % cerrada</b></div>
+        <input type="range" id="sliderPos" min="0" max="100" step="1" value="0" aria-label="Posición de la cortina">
+        <div class="pos-fila"><span>Abierta</span><span>Cerrada</span></div>
+      </div>
+
+      <hr class="sep">
+      <div class="seg" role="group" aria-label="Modo de funcionamiento">
+        <button id="modoAuto" class="on">Automático</button>
+        <button id="modoManual">Manual</button>
+      </div>
+      <p class="mut peq" id="modoNota" style="margin-top:8px"></p>
+    </div>
+
+    <div class="pila">
+      <div class="card">
+        <h2>Luz en la ventana</h2>
+        <div class="fila entre" style="align-items:flex-end">
+          <div>
+            <span class="luz-valor num" id="luzValor">—</span>
+            <span class="luz-escala">/ 1023</span>
+          </div>
+          <span class="chip" id="luzNivel">—</span>
+        </div>
+        <p class="mut peq" id="luzFuente" style="margin-top:6px"></p>
+
+        <div class="banda" id="banda">
+          <div class="z abre" id="zonaAbre"></div>
+          <div class="z mant" id="zonaMant"></div>
+          <div class="z cierra" id="zonaCierra"></div>
+          <div class="marca raw" id="marcaRaw" title="Lectura sin filtrar"></div>
+          <div class="marca filt" id="marcaFilt" title="Lectura filtrada"></div>
+          <span class="umbral-lbl" id="lblAbrir"></span>
+          <span class="umbral-lbl" id="lblCerrar"></span>
+        </div>
+        <div class="leyenda-banda">
+          <span><i style="background:color-mix(in srgb,var(--abre) 45%,transparent)"></i>abre</span>
+          <span><i style="background:var(--mantiene)"></i>se mantiene (histéresis)</span>
+          <span><i style="background:color-mix(in srgb,var(--cierra) 45%,transparent)"></i>cierra</span>
+        </div>
+
+        <p id="pendienteTxt" style="margin-top:14px;font-size:14px"></p>
+        <div class="progreso" id="pendienteBarraCaja" hidden><div id="pendienteBarra"></div></div>
+        <canvas id="spark" aria-label="Luz filtrada del último minuto"></canvas>
+      </div>
+
+      <div class="card" id="cardSim" hidden>
+        <h2>Simulador</h2>
+        <div class="fila entre peq"><span class="mut">Luz exterior simulada</span><b class="num" id="simLuzValor">380</b></div>
+        <input type="range" id="simLuz" min="0" max="1023" step="1" value="380" aria-label="Luz simulada">
+        <div class="fila" style="flex-wrap:wrap;margin-top:8px;gap:8px">
+          <button class="btn peq" data-luz="40">Noche</button>
+          <button class="btn peq" data-luz="200">Poca luz</button>
+          <button class="btn peq" data-luz="450">Interior</button>
+          <button class="btn peq" data-luz="720">Luz intensa</button>
+          <button class="btn peq" data-luz="880">Sol directo</button>
+        </div>
+        <hr class="sep">
+        <div class="fila" style="flex-wrap:wrap;gap:8px">
+          <button class="btn peq" id="simSombra">Pasar la mano (0,5 s)</button>
+          <button class="btn peq" id="simNube">Pasa una nube (4 s)</button>
+        </div>
+        <label class="interruptor" style="margin-top:12px"><span class="t peq">Ruido del sensor (σ = 5)</span><input type="checkbox" id="simRuido" checked></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Próximo horario</h2>
+      <p id="proximoHorario" style="font-size:16px;font-weight:600">—</p>
+      <p class="mut peq" id="proximoDetalle"></p>
+    </div>
+
+    <div class="card">
+      <div class="fila entre"><h2 style="margin:0">Actividad reciente</h2><button class="btn peq" id="verRegistro">Ver todo</button></div>
+      <ul class="eventos" id="eventosRecientes" style="margin-top:6px"></ul>
+    </div>
+  </section>
+
+  <!-- ====================== SENSOR ====================== -->
+  <section class="vista" id="v-sensor">
+    <div class="card ancho">
+      <div class="fila entre" style="flex-wrap:wrap;margin-bottom:12px">
+        <h2 style="margin:0">Lectura del sensor</h2>
+        <div class="fila" style="gap:8px">
+          <label class="interruptor peq" style="gap:8px"><span class="t mut">Ajustar escala</span><input type="checkbox" id="zoomAuto"></label>
+          <div class="seg" style="width:130px"><button id="ventana1" class="on">1 min</button><button id="ventana5">5 min</button></div>
+        </div>
+      </div>
+      <canvas id="grafica" aria-label="Gráfica de la lectura cruda, el promedio y el filtro de Kalman"></canvas>
+      <div class="leyenda" style="margin-top:12px">
+        <button data-serie="n"><i style="background:var(--s-raw)"></i>Lectura cruda</button>
+        <button data-serie="prom"><i style="background:var(--s-prom)"></i>Promedio de 10</button>
+        <button data-serie="kalman"><i style="background:var(--s-kal);height:4px"></i>Kalman</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Valores actuales</h2>
+      <div class="datos">
+        <div class="dato"><div class="k">Lectura N</div><div class="v" id="sN">—</div></div>
+        <div class="dato"><div class="k">Voltaje en el pin</div><div class="v" id="sMv">—</div></div>
+        <div class="dato"><div class="k">Promedio de 10</div><div class="v" id="sProm">—</div></div>
+        <div class="dato"><div class="k">Kalman n̂</div><div class="v" id="sKal">—</div></div>
+        <div class="dato"><div class="k">Velocidad v̂ (u/s)</div><div class="v" id="sVel">—</div></div>
+        <div class="dato"><div class="k">R del LDR (estimada)</div><div class="v" id="sRldr">—</div></div>
+      </div>
+      <p class="mut peq" id="sReduccion" style="margin-top:12px"></p>
+    </div>
+
+    <div class="card">
+      <h2>Ajuste del filtro</h2>
+      <div class="pila">
+        <div>
+          <p class="peq mut" style="margin-bottom:6px">Señal que usa la automatización</p>
+          <div class="seg"><button id="fuenteKalman">Kalman</button><button id="fuentePromedio">Promedio de 10</button></div>
+        </div>
+        <div>
+          <div class="fila entre peq"><span class="mut">R · ruido del sensor (varianza)</span><b class="num" id="valR">—</b></div>
+          <input type="range" id="rangoR" min="-1" max="4" step="0.01" aria-label="Varianza del ruido del sensor R">
+        </div>
+        <div>
+          <div class="fila entre peq"><span class="mut">q · qué tan rápido puede cambiar la luz</span><b class="num" id="valQ">—</b></div>
+          <input type="range" id="rangoQ" min="-2" max="4" step="0.01" aria-label="Ruido de proceso q">
+        </div>
+        <p class="mut peq">R grande o q pequeño → más suave pero más lento. R pequeño o q grande → más rápido pero sigue más el ruido.</p>
+        <div class="fila" style="flex-wrap:wrap">
+          <button class="btn prim" id="btnGuardarFiltro" disabled>Guardar filtro</button>
+          <button class="btn" id="btnMedirRuido">Medir ruido (5 s)</button>
+        </div>
+        <div class="progreso" id="ruidoCaja" hidden><div id="ruidoBarra"></div></div>
+      </div>
+    </div>
+
+    <div class="card ancho">
+      <h2>El filtro de Kalman en matrices</h2>
+      <p class="mut peq" style="margin-bottom:12px">Estado x = [n, v]ᵀ: nivel de luz y su velocidad de cambio. En F, a = e<sup>−Δt/τ</sup> ≈ 0,867 (τ = 0,7 s) hace que la velocidad se olvide pronto, para que el filtro no se pase de largo en los cambios bruscos. Valores en vivo, con Δt = 0,1 s.</p>
+      <div class="ecuaciones" style="margin-bottom:16px">
+        Predicción:&nbsp; x⁻ = F·x &nbsp;&nbsp;&nbsp; P⁻ = F·P·Fᵀ + Q<br>
+        Corrección:&nbsp; K = P⁻·Hᵀ·(H·P⁻·Hᵀ + R)⁻¹ &nbsp;&nbsp;&nbsp; x = x⁻ + K·(z − H·x⁻) &nbsp;&nbsp;&nbsp; P = (I − K·H)·P⁻
+      </div>
+      <div class="matrices">
+        <div class="mbloque"><b>F =</b><div id="mF"></div></div>
+        <div class="mbloque"><b>H =</b><div id="mH"></div></div>
+        <div class="mbloque"><b>Q =</b><div id="mQ"></div></div>
+        <div class="mbloque"><b>R =</b><div id="mR"></div></div>
+        <div class="mbloque"><b>x =</b><div id="mX"></div></div>
+        <div class="mbloque"><b>P =</b><div id="mP"></div></div>
+        <div class="mbloque"><b>K =</b><div id="mK"></div></div>
+        <div class="mbloque"><b>z − Hx⁻ =</b><div id="mY"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== HORARIOS ====================== -->
+  <section class="vista" id="v-horarios">
+    <div class="card">
+      <h2>Reloj de la cortina</h2>
+      <p class="num" id="relojHora" style="font-size:34px;font-weight:740;letter-spacing:-.02em">--:--</p>
+      <p class="mut peq" id="relojFuente"></p>
+      <button class="btn" id="btnSincHora" style="margin-top:12px">Sincronizar con este dispositivo</button>
+    </div>
+
+    <div class="card">
+      <div class="fila entre"><h2 style="margin:0">Horarios</h2><button class="btn peq prim" id="btnNuevoHorario"><svg><use href="#i-mas"/></svg>Nuevo</button></div>
+      <div id="listaHorarios" style="margin-top:6px"></div>
+      <p class="vacio" id="sinHorarios" hidden>Aún no hay horarios. Crea uno para abrir o cerrar a una hora fija.</p>
+      <p class="mut peq" style="margin-top:10px">Un horario que mueve la cortina pasa a modo manual (la luz no la mueve hasta que vuelva a automático). Hasta 8 horarios.</p>
+    </div>
+  </section>
+
+  <!-- ====================== AJUSTES ====================== -->
+  <section class="vista" id="v-ajustes">
+    <div class="card">
+      <h2>General</h2>
+      <div class="pila" data-seccion="general">
+        <label class="campo"><span>Nombre de la cortina</span><input type="text" id="aNombre" maxlength="31"></label>
+        <label class="campo"><span>Zona horaria</span><select id="aZona"></select></label>
+        <div class="fila" style="flex-wrap:wrap">
+          <button class="btn prim" data-guardar="general" disabled>Guardar</button>
+          <button class="btn" id="btnZonaLocal">Usar la de este dispositivo</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Automatización por luz</h2>
+      <div class="pila" data-seccion="auto">
+        <div class="dos">
+          <label class="campo"><span>Abrir por debajo de</span><input type="number" id="aAbrir" min="0" max="1023" step="1"></label>
+          <label class="campo"><span>Cerrar por encima de</span><input type="number" id="aCerrar" min="0" max="1023" step="1"></label>
+        </div>
+        <p class="mut peq" id="aEquiv"></p>
+        <div class="dos">
+          <label class="campo"><span>Confirmar durante (s)</span><input type="number" id="aConfirmar" min="0" max="60" step="0.1"></label>
+          <label class="campo"><span>Volver a automático (min)</span><input type="number" id="aReanudar" min="0" max="1440" step="1"></label>
+        </div>
+        <p class="mut peq">"Confirmar" evita que una sombra o un reflejo corto muevan la cortina. "Volver a automático" en 0 = nunca.</p>
+        <div><button class="btn prim" data-guardar="auto" disabled>Guardar</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Motor y recorrido</h2>
+      <div class="pila" data-seccion="motor">
+        <div>
+          <div class="fila entre peq"><span class="mut">Velocidad</span><b class="num" id="aVelTxt">—</b></div>
+          <input type="range" id="aMsPaso" min="2" max="10" step="1" aria-label="Milisegundos por paso">
+          <div class="pos-fila"><span>Rápida</span><span>Lenta y con más fuerza</span></div>
+        </div>
+        <label class="campo"><span>Recorrido (pasos entre abierta y cerrada)</span><input type="number" id="aRecorrido" min="100" max="200000" step="1"></label>
+        <details>
+          <summary class="peq" style="cursor:pointer;font-weight:600">Calcular el recorrido con la polea</summary>
+          <div class="pila" style="margin-top:10px">
+            <div class="dos">
+              <label class="campo"><span>Distancia (cm)</span><input type="number" id="cDist" value="60" min="1" step="0.1" data-no-sucio></label>
+              <label class="campo"><span>Radio de la polea (cm)</span><input type="number" id="cRadio" value="1.2" min="0.1" step="0.05" data-no-sucio></label>
+            </div>
+            <p class="peq" id="cResultado"></p>
+            <div><button class="btn peq" id="btnUsarCalculo">Usar este valor</button></div>
+          </div>
+        </details>
+        <label class="interruptor"><span class="t"><b class="peq">Usar finales de carrera</b><br><span class="mut peq">Abrir y cerrar avanzan hasta tocar el interruptor.</span></span><input type="checkbox" id="aUsarFinales"></label>
+        <label class="interruptor"><span class="t"><b class="peq">Invertir sentido del motor</b><br><span class="mut peq">Si "abrir" la cierra, actívalo.</span></span><input type="checkbox" id="aInvertirMotor"></label>
+        <label class="interruptor"><span class="t"><b class="peq">Invertir lectura del sensor</b><br><span class="mut peq">Solo si la lectura baja cuando hay más luz (LDR del lado de tierra).</span></span><input type="checkbox" id="aInvertirSensor"></label>
+        <div><button class="btn prim" data-guardar="motor" disabled>Guardar</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Calibración del recorrido</h2>
+      <div class="pila">
+        <div class="fila entre">
+          <span class="peq mut">Posición del motor</span>
+          <b class="num" id="calPos">—</b>
+        </div>
+        <div class="fila" style="gap:18px">
+          <span class="indicador" id="calFcA">Tope abierta</span>
+          <span class="indicador" id="calFcC">Tope cerrada</span>
+        </div>
+        <p class="mut peq" id="calNotaFc"></p>
+        <div class="jog">
+          <button class="btn peq" data-pasos="-2048">◀ 1 vuelta</button>
+          <button class="btn peq" data-pasos="-512">◀ ¼</button>
+          <button class="btn peq" data-pasos="-128">◀ 1/16</button>
+          <button class="btn peq" data-pasos="2048">1 vuelta ▶</button>
+          <button class="btn peq" data-pasos="512">¼ ▶</button>
+          <button class="btn peq" data-pasos="128">1/16 ▶</button>
+        </div>
+        <p class="mut peq">◀ hacia abierta · ▶ hacia cerrada. Mueve la cortina a cada extremo y fíjalo:</p>
+        <div class="dos">
+          <button class="btn" id="btnFijarAbierta">Aquí está abierta</button>
+          <button class="btn" id="btnFijarCerrada">Aquí está cerrada</button>
+        </div>
+        <button class="btn" id="btnBuscarRef">Buscar referencia (abrir hasta el tope)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Red WiFi</h2>
+      <div class="pila">
+        <div class="datos">
+          <div class="dato"><div class="k">WiFi propio</div><div class="v peq" id="redAp" style="font-size:15px">—</div></div>
+          <div class="dato"><div class="k">Red de la casa</div><div class="v peq" id="redSta" style="font-size:15px">—</div></div>
+        </div>
+        <p class="mut peq" id="redDirecciones"></p>
+        <hr class="sep" style="margin:2px 0">
+        <h3>Conectar al WiFi de la casa</h3>
+        <p class="mut peq">Así puedes abrir la app desde cualquier dispositivo de tu red en <b>cortina.local</b>.</p>
+        <div><button class="btn" id="btnEscanear">Buscar redes</button></div>
+        <ul class="redes" id="listaRedes"></ul>
+        <label class="campo"><span>Nombre de la red</span><input type="text" id="wifiSsid" maxlength="32" autocomplete="off"></label>
+        <label class="campo"><span>Clave</span><input type="password" id="wifiClave" maxlength="63" autocomplete="off"></label>
+        <div class="fila" style="flex-wrap:wrap">
+          <button class="btn prim" id="btnConectarWifi">Conectar</button>
+          <button class="btn peligro" id="btnOlvidarWifi">Olvidar red</button>
+        </div>
+        <hr class="sep" style="margin:2px 0">
+        <label class="campo"><span>Nueva clave del WiFi propio (mínimo 8 caracteres)</span><input type="password" id="aApClave" maxlength="63" autocomplete="new-password"></label>
+        <div><button class="btn" id="btnGuardarAp">Cambiar clave y reiniciar</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Sistema</h2>
+      <div class="datos">
+        <div class="dato"><div class="k">Firmware</div><div class="v" id="sisVersion">—</div></div>
+        <div class="dato"><div class="k">Encendida hace</div><div class="v" id="sisUptime">—</div></div>
+        <div class="dato"><div class="k">Memoria libre</div><div class="v" id="sisHeap">—</div></div>
+        <div class="dato"><div class="k">Pasos del motor</div><div class="v" id="sisPasos">—</div></div>
+      </div>
+      <hr class="sep">
+      <h3>Actualizar firmware</h3>
+      <p class="mut peq" style="margin-bottom:10px">Elige el archivo <b>firmware.bin</b> (en .pio/build/esp32dev/ después de compilar).</p>
+      <input type="file" id="otaArchivo" accept=".bin" class="peq">
+      <div class="progreso" id="otaCaja" hidden><div id="otaBarra"></div></div>
+      <div class="fila" style="flex-wrap:wrap;margin-top:12px">
+        <button class="btn" id="btnOta" disabled>Actualizar</button>
+        <button class="btn" id="btnReiniciar">Reiniciar</button>
+        <button class="btn peligro" id="btnRestablecer">Restablecer de fábrica</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Secciones">
+  <div class="marca-lateral"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e8a33d'/%3E%3Crect x='12' y='12' width='40' height='5' rx='2.5' fill='%231b1d22'/%3E%3Cpath d='M15 18h14v30c-4 0-8-2-14-4z' fill='%231b1d22'/%3E%3Cpath d='M49 18H35v30c4 0 8-2 14-4z' fill='%231b1d22'/%3E%3C/svg%3E">Cortina</div>
+  <button class="tab on" data-vista="inicio"><svg><use href="#i-casa"/></svg>Inicio</button>
+  <button class="tab" data-vista="sensor"><svg><use href="#i-sensor"/></svg>Sensor</button>
+  <button class="tab" data-vista="horarios"><svg><use href="#i-reloj"/></svg>Horarios</button>
+  <button class="tab" data-vista="ajustes"><svg><use href="#i-ajustes"/></svg>Ajustes</button>
+</nav>
+
+<dialog id="dlgHorario">
+  <form method="dialog" class="dlg" id="formHorario">
+    <h3 id="hTitulo">Nuevo horario</h3>
+    <label class="campo"><span>Hora</span><input type="time" id="hHora" required value="07:00"></label>
+    <div class="campo"><span class="peq mut" style="font-weight:600">Días</span><div class="dias" id="hDias"></div></div>
+    <label class="campo"><span>Acción</span>
+      <select id="hAccion">
+        <option value="0">Abrir</option>
+        <option value="1">Cerrar</option>
+        <option value="2">Ir a una posición</option>
+        <option value="3">Activar modo automático</option>
+      </select>
+    </label>
+    <div id="hPctFila" hidden>
+      <div class="fila entre peq"><span class="mut">Posición</span><b class="num" id="hPctValor">50 % cerrada</b></div>
+      <input type="range" id="hPct" min="0" max="100" step="5" value="50" aria-label="Posición del horario">
+    </div>
+    <label class="interruptor"><span class="t peq">Activo</span><input type="checkbox" id="hActivo" checked></label>
+    <div class="dlg-pie">
+      <button type="button" class="btn peligro" id="hEliminar" style="margin-right:auto">Eliminar</button>
+      <button type="button" class="btn" id="hCancelar">Cancelar</button>
+      <button type="submit" class="btn prim" id="hGuardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgRegistro">
+  <div class="dlg">
+    <h3>Registro de actividad</h3>
+    <ul class="eventos" id="listaRegistro" style="max-height:60vh;overflow:auto"></ul>
+    <div class="dlg-pie"><button class="btn" id="cerrarRegistro">Cerrar</button></div>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// =====================================================================
+// Utilidades
+// =====================================================================
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const fmt = (x, d = 0) => Number.isFinite(+x)
+  ? (+x).toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d })
+  : '—';
+function crear(tag, clase, texto) {
+  const e = document.createElement(tag);
+  if (clase) e.className = clase;
+  if (texto != null) e.textContent = texto;
+  return e;
+}
+const dos = (n) => String(n).padStart(2, '0');
+
+let toastTimer = 0;
+function toast(msg, error) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'ver' + (error ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, error ? 4200 : 2400);
+}
+
+function duracion(seg) {
+  seg = Math.max(0, Math.floor(seg));
+  const d = Math.floor(seg / 86400), h = Math.floor(seg % 86400 / 3600), m = Math.floor(seg % 3600 / 60);
+  if (d) return `${d} d ${h} h`;
+  if (h) return `${h} h ${m} min`;
+  if (m) return `${m} min`;
+  return `${seg} s`;
+}
+
+const DIAS_LARGOS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
+const LETRA_DIA = { 0: 'D', 1: 'L', 2: 'M', 3: 'X', 4: 'J', 5: 'V', 6: 'S' };
+const ACCIONES = ['Abrir', 'Cerrar', 'Ir a una posición', 'Activar modo automático'];
+const textoAccion = (h) => h.accion === 2 ? `Ir a ${h.pct} % cerrada` : ACCIONES[h.accion];
+
+// Rangos de la Tabla 1 del informe.
+function nivelLuz(n) {
+  if (n < 30) return 'Oscuridad';
+  if (n < 120) return 'Luz tenue';
+  if (n < 320) return 'Poca luz';
+  if (n <= 620) return 'Interior iluminado';
+  if (n < 800) return 'Luz intensa';
+  return 'Sol directo';
+}
+// Divisor de tensión: N = Vout/Vref·1023 y Vout = Vin·Rfija/(Rfija + Rldr)
+const VREF = 3.3, RFIJA = 4.7;
+const voltios = (n) => n / 1023 * VREF;
+const rLdr = (n) => n > 0.5 ? RFIJA * (1023 / n - 1) : Infinity;
+const textoR = (r) => !Number.isFinite(r) ? '∞' : r >= 1000 ? fmt(r / 1000, 1) + ' MΩ' : fmt(r, r < 10 ? 2 : 1) + ' kΩ';
+
+// =====================================================================
+// Filtro de Kalman (misma lógica que src/kalman.h)
+// F = [[1, dt], [0, a]] con a = e^(−dt/τ), τ = 0,7 s
+// =====================================================================
+class Kalman {
+  constructor(q, r) {
+    this.q = q; this.r = r; this.tau = 0.7; this.a = 1; this.iniciado = false;
+    this.n = 0; this.v = 0; this.p00 = 0; this.p01 = 0; this.p11 = 0;
+    this.k0 = 0; this.k1 = 0; this.y = 0;
+  }
+  reiniciar(n0) {
+    this.n = n0; this.v = 0; this.p00 = this.r; this.p01 = 0; this.p11 = 1000;
+    this.k0 = this.k1 = this.y = 0; this.iniciado = true;
+  }
+  actualizar(z, dt) {
+    if (!this.iniciado) { this.reiniciar(z); return this.n; }
+    if (!(dt > 0)) dt = 0.1;
+    const a = this.a = Math.exp(-dt / this.tau);
+    const dt2 = dt * dt, dt3 = dt2 * dt, dt4 = dt3 * dt;
+    const nP = this.n + dt * this.v, vP = a * this.v;
+    const a00 = this.p00 + 2 * dt * this.p01 + dt2 * this.p11 + this.q * dt4 / 4;
+    const a01 = a * (this.p01 + dt * this.p11) + this.q * dt3 / 2;
+    const a11 = a * a * this.p11 + this.q * dt2;
+    this.y = z - nP;
+    const s = a00 + this.r;
+    this.k0 = a00 / s; this.k1 = a01 / s;
+    this.n = nP + this.k0 * this.y;
+    this.v = vP + this.k1 * this.y;
+    this.p00 = (1 - this.k0) * a00;
+    const p01 = (1 - this.k0) * a01, p10 = a01 - this.k1 * a00;
+    this.p01 = (p01 + p10) / 2;
+    this.p11 = a11 - this.k1 * a01;
+    if (!Number.isFinite(this.n) || !Number.isFinite(this.p00)) this.reiniciar(z);
+    return this.n;
+  }
+}
+
+// =====================================================================
+// Conexión real con el ESP32
+// =====================================================================
+class ApiReal {
+  constructor(base) { this.base = base; }
+  async pedir(ruta, opciones = {}, ms = 6000) {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), ms);
+    try {
+      const r = await fetch(this.base + ruta, { ...opciones, signal: c.signal, cache: 'no-store' });
+      let j = null;
+      try { j = await r.json(); } catch (_) { /* respuesta sin JSON */ }
+      if (!r.ok) throw new Error((j && j.error) || `Error ${r.status}`);
+      return j;
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error('La cortina no respondió a tiempo');
+      if (e instanceof TypeError) throw new Error('No hay conexión con la cortina');
+      throw e;
+    } finally {
+      clearTimeout(t);
+    }
+  }
+  // text/plain evita la petición previa de CORS cuando la app se abre desde el PC.
+  enviar(ruta, cuerpo) {
+    return this.pedir(ruta, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(cuerpo || {}) });
+  }
+  estado(ev) { return this.pedir('/api/estado?ev=' + ev, {}, 4000); }
+  historial() { return this.pedir('/api/historial'); }
+  comando(c) { return this.enviar('/api/comando', c); }
+  calibrar(c) { return this.enviar('/api/calibrar', c); }
+  ajustes() { return this.pedir('/api/ajustes'); }
+  guardarAjustes(a) { return this.enviar('/api/ajustes', a); }
+  horarios() { return this.pedir('/api/horarios'); }
+  guardarHorarios(lista) { return this.enviar('/api/horarios', { horarios: lista }); }
+  fijarHora(epoch) { return this.enviar('/api/hora', { epoch }); }
+  redes() { return this.pedir('/api/redes', {}, 9000); }
+  wifi(c) { return this.enviar('/api/wifi', c); }
+  reiniciar() { return this.enviar('/api/reiniciar'); }
+  restablecer() { return this.enviar('/api/restablecer'); }
+  ota(archivo, progreso) {
+    return new Promise((ok, mal) => {
+      const datos = new FormData();
+      datos.append('firmware', archivo, archivo.name);
+      const x = new XMLHttpRequest();
+      x.open('POST', this.base + '/api/ota');
+      x.upload.onprogress = (e) => { if (e.lengthComputable) progreso(e.loaded / e.total); };
+      x.onload = () => {
+        let j = {};
+        try { j = JSON.parse(x.responseText); } catch (_) { /* nada */ }
+        if (x.status === 200) ok(j); else mal(new Error(j.error || `Error ${x.status}`));
+      };
+      x.onerror = () => mal(new Error('Se perdió la conexión durante la actualización'));
+      x.send(datos);
+    });
+  }
+}
+
+// =====================================================================
+// Simulador (modo demostración): replica la lógica del firmware
+// =====================================================================
+function gauss() { let u = 0; for (let i = 0; i < 12; i++) u += Math.random(); return u - 6; }
+
+class Simulador {
+  constructor() {
+    this.aj = {
+      nombre: 'Cortina de la sala', umbralAbrir: 320, umbralCerrar: 620, confirmarMs: 1000, reanudarMin: 30,
+      filtro: 'kalman', kalmanR: 25, kalmanQ: 100, invertirSensor: false, recorrido: 16297, msPorPaso: 3,
+      invertirMotor: false, usarFinales: true, zonaMin: -new Date().getTimezoneOffset(), staSsid: '', apNombre: 'Cortina-DEMO',
+    };
+    this.apClave = 'cortina123';
+    this.horariosLista = [
+      { activo: true, hora: 6, minuto: 30, dias: 62, accion: 0, pct: 0 },
+      { activo: true, hora: 20, minuto: 0, dias: 127, accion: 1, pct: 0 },
+    ];
+    this.luzExterior = 380; this.ruido = true; this.sombraHasta = 0; this.nubeHasta = 0;
+    this.kal = new Kalman(this.aj.kalmanQ, this.aj.kalmanR);
+    this.ventana = []; this.n = 0; this.prom = 0; this.filt = 0; this.mv = 0;
+    this.cal = null; this.calPct = 0;
+    this.m = { pos: 0, obj: 0, estado: 'reposo', dir: 0, error: '', buscarTope: false, ref: true, pasos: 0, acum: 0 };
+    this.modo = 'auto'; this.manualDesde = 0; this.pend = 0; this.pendDesde = 0;
+    this.eventos = []; this.seq = 0;
+    this.hist = { n: [], prom: [], kalman: [], pct: [] };
+    this.t0 = performance.now(); this.ultimo = 0; this.ultimoSeg = -1000; this.ultimoMinuto = -1;
+    this.staConectada = false;
+    this.ev(0, 'WiFi propio: Cortina-DEMO (http://192.168.4.1)');
+    this.ev(0, 'Inicio: abriendo hasta el final de carrera para tomar referencia');
+    // Llena 2 minutos de historial para que las gráficas no empiecen vacías.
+    for (let i = 0; i < 1200; i++) this.paso(100, i % 10 === 0);
+    this.ultimo = this.ahora();
+    this.timer = setInterval(() => {
+      const a = this.ahora();
+      this.paso(a - this.ultimo, false);
+      this.ultimo = a;
+    }, 100);
+  }
+  ahora() { return performance.now() - this.t0; }
+  ev(tipo, texto) {
+    this.eventos.push({ seq: ++this.seq, ms: Math.round(this.ahora()), epoch: Math.floor(Date.now() / 1000), tipo, texto });
+    if (this.eventos.length > 40) this.eventos.shift();
+  }
+  medir() {
+    let base = this.luzExterior;
+    const t = Date.now();
+    if (t < this.sombraHasta) base *= 0.3;
+    else if (t < this.nubeHasta) base *= 0.55;
+    let n = clamp(base + (this.ruido ? gauss() * 5 : 0), 0, 1023);
+    if (this.aj.invertirSensor) n = 1023 - n;
+    return n;
+  }
+  paso(ms, guardarPunto) {
+    const dt = clamp(ms / 1000, 0.02, 1);
+    const n = this.medir();
+    this.n = n; this.mv = Math.round(n / 1023 * 3300);
+    this.ventana.push(n);
+    if (this.ventana.length > 10) this.ventana.shift();
+    this.prom = this.ventana.reduce((a, b) => a + b, 0) / this.ventana.length;
+    this.kal.q = this.aj.kalmanQ; this.kal.r = this.aj.kalmanR;
+    this.kal.actualizar(n, dt);
+    this.filt = this.aj.filtro === 'kalman' ? clamp(this.kal.n, 0, 1023) : this.prom;
+
+    if (this.cal) {
+      this.cal.push(n);
+      this.calPct = Math.round(this.cal.length * 2);
+      if (this.cal.length >= 50) {
+        const media = this.cal.reduce((a, b) => a + b, 0) / this.cal.length;
+        let v = this.cal.reduce((a, b) => a + (b - media) ** 2, 0) / (this.cal.length - 1);
+        v = clamp(v, 1, 10000);
+        this.aj.kalmanR = Math.round(v * 100) / 100;
+        this.cal = null; this.calPct = 100;
+      }
+    }
+
+    this.moverMotor(ms);
+
+    const ahora = this.ahora();
+    if (this.modo === 'manual' && this.aj.reanudarMin > 0 && ahora - this.manualDesde >= this.aj.reanudarMin * 60000) {
+      this.modo = 'auto'; this.pend = 0;
+      this.ev(0, `Vuelve a modo automático tras ${this.aj.reanudarMin} min`);
+    }
+    if (this.modo === 'auto') this.automatizar();
+
+    if (guardarPunto || ahora - this.ultimoSeg >= 1000) {
+      this.ultimoSeg = ahora;
+      const h = this.hist;
+      h.n.push(Math.round(this.n)); h.prom.push(Math.round(this.prom));
+      h.kalman.push(Math.round(clamp(this.kal.n, 0, 1023))); h.pct.push(this.pct());
+      if (h.n.length > 300) for (const k in h) h[k].shift();
+      this.revisarHorarios();
+    }
+  }
+  pct() { return clamp(Math.round(this.m.pos * 100 / this.aj.recorrido), 0, 100); }
+  terminar(error) {
+    const m = this.m;
+    m.estado = error ? 'error' : 'reposo'; m.error = error || '';
+    m.obj = m.pos; m.buscarTope = false; m.dir = 0; m.acum = 0;
+  }
+  moverMotor(ms) {
+    const m = this.m;
+    if (m.estado !== 'moviendo' && m.estado !== 'buscando') return;
+    m.acum += ms;
+    let pasos = Math.floor(m.acum / this.aj.msPorPaso);
+    m.acum -= pasos * this.aj.msPorPaso;
+    const rec = this.aj.recorrido, fc = this.aj.usarFinales;
+    while (pasos-- > 0) {
+      if (m.estado === 'buscando') {
+        if (m.pos <= 0) { m.pos = 0; m.ref = true; this.terminar(); break; }
+        m.pos--; m.pasos++; m.dir = -1;
+        continue;
+      }
+      let dir = m.obj > m.pos ? 1 : m.obj < m.pos ? -1 : 0;
+      if (m.buscarTope && dir === 0) dir = m.obj === 0 ? -1 : 1;
+      if (dir === 0) { this.terminar(); break; }
+      if (fc && dir < 0 && m.pos <= 0) { m.pos = 0; this.terminar(); break; }
+      if (fc && dir > 0 && m.pos >= rec) { m.pos = rec; this.terminar(); break; }
+      m.pos += dir; m.pasos++; m.dir = dir;
+    }
+  }
+  irA(p) {
+    const m = this.m, rec = this.aj.recorrido;
+    m.obj = clamp(Math.round(p), 0, rec);
+    m.buscarTope = this.aj.usarFinales && (m.obj === 0 || m.obj === rec);
+    if (m.estado !== 'moviendo') m.acum = 0;
+    m.estado = 'moviendo'; m.error = '';
+  }
+  automatizar() {
+    const m = this.m;
+    if (m.estado === 'error' || m.estado === 'buscando') { this.pend = 0; return; }
+    const f = this.filt;
+    let deseado = 0;
+    if (f > this.aj.umbralCerrar && m.obj !== this.aj.recorrido) deseado = 1;
+    else if (f < this.aj.umbralAbrir && m.obj !== 0) deseado = -1;
+    if (deseado !== this.pend) { this.pend = deseado; this.pendDesde = this.ahora(); }
+    if (this.pend !== 0 && this.ahora() - this.pendDesde >= this.aj.confirmarMs) {
+      if (this.pend > 0) { this.irA(this.aj.recorrido); this.ev(1, `Automático: cierra (luz ${Math.round(f)} > ${this.aj.umbralCerrar})`); }
+      else { this.irA(0); this.ev(1, `Automático: abre (luz ${Math.round(f)} < ${this.aj.umbralAbrir})`); }
+      this.pend = 0;
+    }
+  }
+  revisarHorarios() {
+    const local = new Date(Date.now() + this.aj.zonaMin * 60000);
+    const minuto = Math.floor(local.getTime() / 60000);
+    if (minuto === this.ultimoMinuto) return;
+    const primera = this.ultimoMinuto < 0;
+    this.ultimoMinuto = minuto;
+    if (primera) return;
+    const dia = local.getUTCDay(), h = local.getUTCHours(), mi = local.getUTCMinutes();
+    for (const x of this.horariosLista) {
+      if (!x.activo || !(x.dias & (1 << dia)) || x.hora !== h || x.minuto !== mi) continue;
+      if (x.accion === 3) { this.modo = 'auto'; this.pend = 0; this.ev(1, 'Modo automático (horario)'); continue; }
+      this.manual();
+      if (x.accion === 0) this.irA(0);
+      else if (x.accion === 1) this.irA(this.aj.recorrido);
+      else this.irA(this.aj.recorrido * x.pct / 100);
+      this.ev(1, `${textoAccion(x)} (horario)`);
+    }
+  }
+  manual() { this.modo = 'manual'; this.manualDesde = this.ahora(); this.pend = 0; }
+  estadoCortina() {
+    const m = this.m;
+    if (m.estado === 'error') return 'error';
+    if (m.estado === 'buscando') return 'referenciando';
+    if (m.estado === 'moviendo') return m.dir > 0 ? 'cerrando' : 'abriendo';
+    const p = this.pct();
+    return p <= 1 ? 'abierta' : p >= 99 ? 'cerrada' : 'parcial';
+  }
+
+  // ---------- Misma interfaz que ApiReal ----------
+  async estado(desde) {
+    const m = this.m, k = this.kal, ahora = this.ahora();
+    const falta = this.pend ? Math.max(0, this.aj.confirmarMs - (ahora - this.pendDesde)) : 0;
+    const reanuda = this.modo === 'manual' && this.aj.reanudarMin > 0
+      ? Math.max(0, Math.floor((this.aj.reanudarMin * 60000 - (ahora - this.manualDesde)) / 1000)) : 0;
+    return {
+      nombre: this.aj.nombre, version: '2.0.0 (demo)', uptime: Math.floor(ahora / 1000), heap: 182344,
+      modo: this.modo, reanudaEn: reanuda, cortina: this.estadoCortina(), pct: this.pct(),
+      motor: {
+        pos: m.pos, obj: m.obj, rec: this.aj.recorrido, estado: m.estado, error: m.error, dir: m.dir,
+        fcA: this.aj.usarFinales && m.pos <= 0, fcC: this.aj.usarFinales && m.pos >= this.aj.recorrido,
+        usarFc: this.aj.usarFinales, ref: m.ref, pasos: m.pasos,
+      },
+      luz: {
+        n: this.n, mv: this.mv, prom: this.prom, filt: this.filt, fuente: this.aj.filtro,
+        cal: !!this.cal, calPct: this.calPct,
+        k: { n: k.n, v: k.v, k0: k.k0, k1: k.k1, y: k.y, p00: k.p00, p01: k.p01, p11: k.p11, q: this.aj.kalmanQ, r: this.aj.kalmanR },
+      },
+      auto: { abrir: this.aj.umbralAbrir, cerrar: this.aj.umbralCerrar, pendiente: this.pend, falta, confirmar: this.aj.confirmarMs },
+      hora: { valida: true, epoch: Math.floor(Date.now() / 1000), zona: this.aj.zonaMin, fuente: 'app' },
+      red: {
+        ap: 'Cortina-DEMO', apIp: '192.168.4.1', apClientes: 1, sta: this.aj.staSsid,
+        conectado: this.staConectada, staIp: this.staConectada ? '192.168.1.57' : '', rssi: this.staConectada ? -58 : 0, mdns: 'cortina.local',
+      },
+      ev: this.eventos.filter((e) => e.seq > desde),
+      evSeq: this.seq,
+    };
+  }
+  async historial() { return { intervaloMs: 1000, ...JSON.parse(JSON.stringify(this.hist)) }; }
+  async comando(c) {
+    switch (c.accion) {
+      case 'abrir': this.manual(); this.irA(0); this.ev(1, 'Abrir (app)'); break;
+      case 'cerrar': this.manual(); this.irA(this.aj.recorrido); this.ev(1, 'Cerrar (app)'); break;
+      case 'parar': this.manual(); this.terminar(); this.ev(1, 'Parar (app)'); break;
+      case 'auto': this.modo = 'auto'; this.pend = 0; this.ev(1, 'Modo automático (app)'); break;
+      case 'manual': this.manual(); this.ev(1, 'Modo manual (app)'); break;
+      case 'posicion': {
+        const p = clamp(Math.round(c.pct), 0, 100);
+        this.manual(); this.irA(this.aj.recorrido * p / 100); this.ev(1, `Ir a ${p}% cerrada (app)`); break;
+      }
+      default: throw new Error('Acción desconocida');
+    }
+    return { ok: true };
+  }
+  async calibrar(c) {
+    const m = this.m;
+    switch (c.accion) {
+      case 'mover':
+        this.manual();
+        m.obj = m.pos + Math.round(c.pasos); m.buscarTope = false;
+        if (m.estado !== 'moviendo') m.acum = 0;
+        m.estado = 'moviendo'; m.error = '';
+        break;
+      case 'buscar': this.manual(); m.estado = 'buscando'; m.error = ''; this.ev(1, 'Buscando referencia (final de carrera de abierta)'); break;
+      case 'fijarAbierta': this.manual(); m.pos = 0; this.terminar(); m.ref = true; this.ev(1, 'Posición actual fijada como ABIERTA'); break;
+      case 'fijarCerrada':
+        if (m.estado !== 'reposo') throw new Error('Espera a que el motor se detenga');
+        if (m.pos < 100) throw new Error('La cortina está demasiado cerca de la posición abierta');
+        this.aj.recorrido = m.pos; this.ev(1, `Recorrido fijado en ${m.pos} pasos`); break;
+      case 'ruido': this.cal = []; this.calPct = 0; this.ev(0, 'Midiendo el ruido del sensor (5 s, no muevas la luz)'); break;
+      default: throw new Error('Acción desconocida');
+    }
+    return { ok: true };
+  }
+  async ajustes() { return { ...this.aj }; }
+  async guardarAjustes(a) {
+    const n = { ...this.aj };
+    const rangos = {
+      umbralAbrir: [0, 1023], umbralCerrar: [0, 1023], confirmarMs: [0, 60000], reanudarMin: [0, 1440],
+      kalmanR: [0.1, 100000], kalmanQ: [0.001, 100000], recorrido: [100, 200000], msPorPaso: [2, 20], zonaMin: [-720, 840],
+    };
+    for (const [k, [a0, a1]] of Object.entries(rangos)) {
+      if (a[k] === undefined) continue;
+      if (typeof a[k] !== 'number' || !(a[k] >= a0 && a[k] <= a1)) throw new Error(`${k} fuera de rango (${a0} a ${a1})`);
+      n[k] = ['umbralAbrir', 'umbralCerrar', 'confirmarMs', 'reanudarMin', 'recorrido', 'msPorPaso', 'zonaMin'].includes(k) ? Math.trunc(a[k]) : a[k];
+    }
+    for (const k of ['invertirSensor', 'invertirMotor', 'usarFinales']) if (typeof a[k] === 'boolean') n[k] = a[k];
+    if (a.nombre !== undefined) {
+      if (!a.nombre || a.nombre.length > 31) throw new Error('El nombre debe tener entre 1 y 31 caracteres');
+      n.nombre = a.nombre;
+    }
+    if (a.filtro !== undefined) {
+      if (a.filtro !== 'kalman' && a.filtro !== 'promedio') throw new Error('filtro debe ser kalman o promedio');
+      n.filtro = a.filtro;
+    }
+    if (a.apClave !== undefined && (a.apClave.length < 8 || a.apClave.length > 63)) throw new Error('La clave del WiFi propio debe tener entre 8 y 63 caracteres');
+    if (n.umbralAbrir + 10 > n.umbralCerrar) throw new Error('El umbral de abrir debe ser al menos 10 menor que el de cerrar');
+    this.aj = n;
+    if (a.apClave !== undefined) { this.apClave = a.apClave; this.ev(2, 'Clave del WiFi propio cambiada: reiniciando'); }
+    this.ev(0, 'Ajustes guardados');
+    return { ...n, ok: true };
+  }
+  async horarios() { return { horarios: JSON.parse(JSON.stringify(this.horariosLista)) }; }
+  async guardarHorarios(lista) {
+    if (lista.length > 8) throw new Error('Máximo 8 horarios');
+    this.horariosLista = JSON.parse(JSON.stringify(lista));
+    this.ev(0, `Horarios guardados (${lista.length})`);
+    return this.horarios();
+  }
+  async fijarHora() { return { ok: true }; }
+  async redes() {
+    if (!this.escaneoHasta) { this.escaneoHasta = Date.now() + 1800; return { escaneando: true, redes: [] }; }
+    if (Date.now() < this.escaneoHasta) return { escaneando: true, redes: [] };
+    this.escaneoHasta = 0;
+    return {
+      escaneando: false, redes: [
+        { ssid: 'Casa_Familia', rssi: -48, segura: true },
+        { ssid: 'Universidad-UCC', rssi: -67, segura: true },
+        { ssid: 'Vecino 5G', rssi: -81, segura: true },
+      ],
+    };
+  }
+  async wifi(c) {
+    if (c.olvidar) { this.aj.staSsid = ''; this.staConectada = false; return { ok: true }; }
+    if (!c.ssid) throw new Error('Nombre de red inválido');
+    this.aj.staSsid = c.ssid; this.staConectada = false;
+    setTimeout(() => { this.staConectada = true; this.ev(0, `Conectada a "${c.ssid}" (IP 192.168.1.57)`); }, 2500);
+    return { ok: true };
+  }
+  async reiniciar() { this.ev(2, 'Reinicio simulado'); return { ok: true }; }
+  async restablecer() { throw new Error('No disponible en modo demostración'); }
+  async ota() { throw new Error('No disponible en modo demostración'); }
+}
+
+// =====================================================================
+// Estado de la app
+// =====================================================================
+let disp = null;
+let modoDemo = false;
+let ultimo = null;          // último /api/estado
+let ajustesDisp = null;     // último /api/ajustes
+let horarios = [];
+let eventos = [];
+let evSeq = 0;
+let fallos = 0;
+let sondeando = false;
+let horaSincronizada = false;
+const serie = { t: [], n: [], prom: [], kalman: [], pct: [] };
+const visibles = { n: true, prom: true, kalman: true };
+let ventanaMs = 60000;
+let vistaActual = 'inicio';
+const sucias = new Set();   // secciones de ajustes con cambios sin guardar
+let filtroSucio = false;
+let arrastrandoPos = 0;
+
+// =====================================================================
+// Arranque
+// =====================================================================
+async function iniciar() {
+  conectarInterfaz();
+  if (location.protocol.startsWith('http')) {
+    const m = document.createElement('link');
+    m.rel = 'manifest'; m.href = 'manifest.webmanifest';
+    document.head.append(m);
+  }
+  const p = new URLSearchParams(location.search);
+  const ip = p.get('dispositivo');
+  const base = ip ? (/^https?:\/\//.test(ip) ? ip : 'http://' + ip).replace(/\/+$/, '') : '';
+  const local = ['localhost', '127.0.0.1', '[::1]', ''].includes(location.hostname) || location.protocol === 'file:';
+
+  if (p.has('demo') || (local && !ip)) {
+    activarDemo(local && !p.has('demo') ? 'Abriste la app desde el computador, sin una cortina conectada.' : '');
+    return;
+  }
+  const real = new ApiReal(base);
+  try {
+    await real.estado(0);
+  } catch (e) {
+    if (ip) { activarDemo(`No se encontró la cortina en ${ip}.`); return; }
+    // Servida por la propia cortina: se sigue intentando.
+  }
+  disp = real;
+  await cargarTodo();
+  sondear();
+}
+
+function activarDemo(motivo) {
+  if (disp instanceof Simulador) return;
+  disp = new Simulador();
+  modoDemo = true;
+  $('avisoDemo').hidden = false;
+  $('avisoDemoTxt').textContent = motivo;
+  $('cardSim').hidden = false;
+  reiniciarDatos();
+  cargarTodo().then(sondear);
+}
+
+function reiniciarDatos() {
+  eventos = []; evSeq = 0;
+  for (const k in serie) serie[k].length = 0;
+}
+
+async function cargarTodo() {
+  const tareas = [
+    disp.ajustes().then((a) => { ajustesDisp = a; llenarAjustes(); }),
+    disp.horarios().then((h) => { horarios = h.horarios || []; pintarHorarios(); }),
+    disp.historial().then(cargarHistorial),
+  ];
+  await Promise.allSettled(tareas);
+}
+
+function cargarHistorial(h) {
+  if (!h || !Array.isArray(h.n) || serie.t.length) return;
+  const ahora = Date.now(), paso = h.intervaloMs || 1000, total = h.n.length;
+  for (let i = 0; i < total; i++) {
+    serie.t.push(ahora - (total - 1 - i) * paso);
+    serie.n.push(h.n[i]); serie.prom.push(h.prom[i]); serie.kalman.push(h.kalman[i]); serie.pct.push(h.pct[i]);
+  }
+}
+
+function sondear() {
+  if (sondeando) return;
+  sondeando = true;
+  const ciclo = async () => {
+    const dispActual = disp;
+    try {
+      const e = await dispActual.estado(evSeq);
+      if (dispActual !== disp) return;  // cambió a modo demo mientras esperaba
+      fallos = 0;
+      recibirEstado(e);
+    } catch (err) {
+      fallos++;
+      if (fallos >= 2) marcarSinConexion();
+    }
+    setTimeout(ciclo, document.hidden ? 3000 : fallos ? 2000 : 500);
+  };
+  ciclo();
+}
+
+function marcarSinConexion() {
+  const c = $('conexion');
+  c.className = 'pildora err';
+  c.textContent = 'Sin conexión';
+  $('avisoSinConexion').hidden = false;
+}
+
+// =====================================================================
+// Recepción del estado
+// =====================================================================
+function recibirEstado(e) {
+  if (e.evSeq < evSeq) {
+    // La cortina se reinició: se recarga todo.
+    reiniciarDatos();
+    cargarTodo();
+  }
+  for (const ev of e.ev || []) eventos.push(ev);
+  if (eventos.length > 120) eventos.splice(0, eventos.length - 120);
+  evSeq = e.evSeq;
+  ultimo = e;
+
+  const t = Date.now();
+  serie.t.push(t);
+  serie.n.push(+e.luz.n); serie.prom.push(+e.luz.prom); serie.kalman.push(+e.luz.k.n); serie.pct.push(e.pct);
+  while (serie.t.length && serie.t[0] < t - 330000) for (const k in serie) serie[k].shift();
+
+  if (!modoDemo && !horaSincronizada) sincronizarHora(false);
+
+  $('avisoSinConexion').hidden = true;
+  const c = $('conexion');
+  if (modoDemo) {
+    c.className = 'pildora demo'; c.textContent = 'Demostración';
+  } else {
+    c.className = 'pildora ok';
+    c.textContent = e.red.conectado ? `Conectada · ${e.red.sta}` : `Conectada · ${e.red.ap}`;
+  }
+  $('nombre').textContent = e.nombre;
+  document.title = e.nombre;
+
+  pintarInicio(e);
+  pintarReloj(e);
+  if (vistaActual === 'sensor') pintarSensor(e);
+  if (vistaActual === 'ajustes') pintarAjustesEnVivo(e);
+  if (!$('dlgRegistro').open) pintarEventos($('eventosRecientes'), 5);
+  else pintarEventos($('listaRegistro'), 120);
+}
+
+async function sincronizarHora(avisar) {
+  try {
+    const ahora = Math.floor(Date.now() / 1000);
+    const desfase = ultimo && ultimo.hora.valida ? Math.abs(ultimo.hora.epoch - ahora) : Infinity;
+    if (avisar || desfase > 60) await disp.fijarHora(ahora);
+    horaSincronizada = true;
+    if (avisar) toast('Hora sincronizada');
+  } catch (err) {
+    if (avisar) toast(err.message, true);
+  }
+}
+
+// =====================================================================
+// Inicio
+// =====================================================================
+const TITULOS = {
+  abierta: 'Abierta', cerrada: 'Cerrada', referenciando: 'Buscando referencia…', error: 'Detenida por un error',
+};
+
+function mezclar(a, b, t) {
+  const ha = a.match(/\w\w/g).map((x) => parseInt(x, 16)), hb = b.match(/\w\w/g).map((x) => parseInt(x, 16));
+  return '#' + ha.map((v, i) => Math.round(v + (hb[i] - v) * t).toString(16).padStart(2, '0')).join('');
+}
+
+function pintarVentana(pct, luz) {
+  $('cortina').style.width = (9 + pct * 0.91) + '%';
+  // Cielo según la luz: noche → día → sol intenso
+  const t = clamp(luz / 1023, 0, 1);
+  let c1, c2;
+  if (t < 0.35) { const u = t / 0.35; c1 = mezclar('141a33', '4f7fc4', u); c2 = mezclar('2c3561', '9cc3ea', u); }
+  else if (t < 0.7) { const u = (t - 0.35) / 0.35; c1 = mezclar('4f7fc4', '5aa2ea', u); c2 = mezclar('9cc3ea', 'd4ecff', u); }
+  else { const u = (t - 0.7) / 0.3; c1 = mezclar('5aa2ea', 'f5b13d', u); c2 = mezclar('d4ecff', 'ffe7a8', u); }
+  const cielo = $('cielo');
+  cielo.style.setProperty('--cielo1', c1);
+  cielo.style.setProperty('--cielo2', c2);
+  const astro = $('astro');
+  astro.classList.toggle('luna', t < 0.2);
+  astro.style.opacity = t < 0.2 ? 0.9 : clamp((t - 0.2) * 2.2, 0.25, 1);
+  astro.style.transform = `scale(${0.8 + t * 0.5})`;
+}
+
+function pintarInicio(e) {
+  const m = e.motor;
+  pintarVentana(e.pct, +e.luz.filt);
+
+  let titulo = TITULOS[e.cortina];
+  if (e.cortina === 'parcial') titulo = `${e.pct} % cerrada`;
+  if (e.cortina === 'abriendo') titulo = `Abriendo… ${e.pct} %`;
+  if (e.cortina === 'cerrando') titulo = `Cerrando… ${e.pct} %`;
+  $('estadoTitulo').textContent = titulo || e.cortina;
+
+  $('estadoDetalle').textContent = e.modo === 'auto'
+    ? `Automático · cierra con luz sobre ${e.auto.cerrar} y abre bajo ${e.auto.abrir}`
+    : `Manual · la luz no mueve la cortina`;
+
+  const moviendo = m.estado === 'moviendo' || m.estado === 'buscando';
+  $('btnParar').disabled = !moviendo;
+  $('btnAbrir').disabled = !moviendo && e.cortina === 'abierta';
+  $('btnCerrar').disabled = !moviendo && e.cortina === 'cerrada';
+
+  if (Date.now() > arrastrandoPos) {
+    const objetivoPct = m.rec > 0 ? clamp(Math.round(m.obj * 100 / m.rec), 0, 100) : 0;
+    $('sliderPos').value = moviendo ? objetivoPct : e.pct;
+    $('sliderPosValor').textContent = `${$('sliderPos').value} % cerrada`;
+  }
+
+  $('modoAuto').classList.toggle('on', e.modo === 'auto');
+  $('modoManual').classList.toggle('on', e.modo !== 'auto');
+  $('modoNota').textContent = e.modo === 'auto'
+    ? 'La cortina se mueve sola según la luz y los horarios.'
+    : e.reanudaEn > 0 ? `Vuelve a automático en ${duracion(e.reanudaEn)}.` : 'Se queda en manual hasta que elijas Automático.';
+
+  $('avisoError').hidden = m.estado !== 'error';
+  $('avisoErrorTxt').textContent = m.error;
+
+  // ---- Luz ----
+  const f = +e.luz.filt, n = +e.luz.n, a = e.auto.abrir, c = e.auto.cerrar;
+  $('luzValor').textContent = fmt(f);
+  $('luzNivel').textContent = nivelLuz(f);
+  $('luzFuente').textContent = `${e.luz.fuente === 'kalman' ? 'Filtro de Kalman' : 'Promedio de 10 lecturas'} · lectura cruda ${fmt(n)} · ${fmt(voltios(f), 2)} V`;
+  $('zonaAbre').style.width = (a / 1023 * 100) + '%';
+  $('zonaMant').style.width = ((c - a) / 1023 * 100) + '%';
+  $('zonaCierra').style.width = ((1023 - c) / 1023 * 100) + '%';
+  $('marcaRaw').style.left = (clamp(n, 0, 1023) / 1023 * 100) + '%';
+  $('marcaFilt').style.left = (clamp(f, 0, 1023) / 1023 * 100) + '%';
+  const la = $('lblAbrir'), lc = $('lblCerrar');
+  la.style.left = (a / 1023 * 100) + '%'; la.textContent = a;
+  lc.style.left = (c / 1023 * 100) + '%'; lc.textContent = c;
+
+  const caja = $('pendienteBarraCaja');
+  let txt;
+  if (m.estado === 'error') txt = 'Automatización detenida hasta resolver el error del motor.';
+  else if (e.modo !== 'auto') txt = 'Automatización en pausa (modo manual).';
+  else if (e.auto.pendiente) {
+    const s = fmt(e.auto.falta / 1000, 1);
+    txt = e.auto.pendiente > 0 ? `Mucha luz: se cerrará en ${s} s si se mantiene.` : `Poca luz: se abrirá en ${s} s si se mantiene.`;
+  } else if (f > c) txt = 'Mucha luz: la cortina se mantiene cerrada.';
+  else if (f < a) txt = 'Poca luz: la cortina se mantiene abierta.';
+  else txt = 'Dentro de la banda de histéresis: la cortina no se mueve.';
+  $('pendienteTxt').textContent = txt;
+  caja.hidden = !(e.modo === 'auto' && e.auto.pendiente);
+  if (!caja.hidden && e.auto.confirmar > 0) $('pendienteBarra').style.width = ((1 - e.auto.falta / e.auto.confirmar) * 100) + '%';
+
+  dibujarSpark();
+  pintarProximo(e);
+}
+
+function pintarProximo(e) {
+  const p = $('proximoHorario'), d = $('proximoDetalle');
+  if (!e.hora.valida) { p.textContent = 'Reloj sin sincronizar'; d.textContent = 'Los horarios funcionan cuando la cortina tiene la hora.'; return; }
+  const local = new Date((e.hora.epoch + e.hora.zona * 60) * 1000);
+  const ahoraMin = local.getUTCHours() * 60 + local.getUTCMinutes(), hoy = local.getUTCDay();
+  let mejor = null;
+  for (const h of horarios) {
+    if (!h.activo || !h.dias) continue;
+    for (let k = 0; k < 8; k++) {
+      const dia = (hoy + k) % 7;
+      if (!(h.dias & (1 << dia))) continue;
+      const min = h.hora * 60 + h.minuto;
+      if (k === 0 && min <= ahoraMin) continue;
+      const falta = k * 1440 + min - ahoraMin;
+      if (!mejor || falta < mejor.falta) mejor = { h, falta, k, dia };
+      break;
+    }
+  }
+  if (!mejor) { p.textContent = 'Sin horarios activos'; d.textContent = 'Crea uno en la pestaña Horarios.'; return; }
+  const cuando = mejor.k === 0 ? 'Hoy' : mejor.k === 1 ? 'Mañana' : DIAS_LARGOS[mejor.dia][0].toUpperCase() + DIAS_LARGOS[mejor.dia].slice(1);
+  p.textContent = `${textoAccion(mejor.h)} · ${cuando} ${dos(mejor.h.hora)}:${dos(mejor.h.minuto)}`;
+  d.textContent = `Faltan ${duracion(mejor.falta * 60)}`;
+}
+
+function cuandoEvento(ev) {
+  if (ev.epoch) {
+    const f = new Date(ev.epoch * 1000);
+    return `${dos(f.getHours())}:${dos(f.getMinutes())}:${dos(f.getSeconds())}`;
+  }
+  if (ultimo) return 'hace ' + duracion(ultimo.uptime - ev.ms / 1000);
+  return '';
+}
+
+function pintarEventos(lista, max) {
+  const items = eventos.slice(-max).reverse();
+  lista.replaceChildren();
+  if (!items.length) { lista.append(crear('li', 'vacio', 'Sin actividad todavía.')); return; }
+  for (const ev of items) {
+    const li = crear('li', 't' + ev.tipo);
+    li.append(crear('span', 'punto'), crear('span', '', ev.texto), crear('span', 'cuando num', cuandoEvento(ev)));
+    lista.append(li);
+  }
+}
+
+// =====================================================================
+// Gráficas
+// =====================================================================
+let colores = {};
+function leerColores() {
+  const s = getComputedStyle(document.documentElement);
+  for (const k of ['s-raw', 's-prom', 's-kal', 'abre', 'cierra', 'muted', 'line', 'card2', 'ink']) colores[k] = s.getPropertyValue('--' + k).trim();
+}
+
+function prepararCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return null;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+
+function trazar(ctx, xs, ys, x, y) {
+  ctx.beginPath();
+  let empezado = false;
+  for (let i = 0; i < xs.length; i++) {
+    if (!Number.isFinite(ys[i])) continue;
+    const px = x(xs[i]), py = y(ys[i]);
+    if (!empezado) { ctx.moveTo(px, py); empezado = true; } else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+}
+
+function dibujarSpark() {
+  const cv = $('spark');
+  if (vistaActual !== 'inicio' || !ultimo) return;
+  const g = prepararCanvas(cv);
+  if (!g) return;
+  const { ctx, w, h } = g;
+  const ahora = Date.now(), desde = ahora - 60000;
+  const x = (t) => (t - desde) / 60000 * w;
+  const y = (v) => h - 3 - clamp(v, 0, 1023) / 1023 * (h - 6);
+  ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+  ctx.strokeStyle = colores.abre; ctx.beginPath(); ctx.moveTo(0, y(ultimo.auto.abrir)); ctx.lineTo(w, y(ultimo.auto.abrir)); ctx.stroke();
+  ctx.strokeStyle = colores.cierra; ctx.beginPath(); ctx.moveTo(0, y(ultimo.auto.cerrar)); ctx.lineTo(w, y(ultimo.auto.cerrar)); ctx.stroke();
+  ctx.setLineDash([]);
+  const i0 = serie.t.findIndex((t) => t >= desde);
+  if (i0 < 0) return;
+  const clave = ultimo.luz.fuente === 'kalman' ? 'kalman' : 'prom';
+  ctx.strokeStyle = colores['s-kal']; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  trazar(ctx, serie.t.slice(i0), serie[clave].slice(i0), x, y);
+}
+
+function dibujarGrafica() {
+  const cv = $('grafica');
+  if (vistaActual !== 'sensor' || !ultimo) return;
+  const g = prepararCanvas(cv);
+  if (!g) return;
+  const { ctx, w, h } = g;
+  const izq = 38, der = 8, arr = 8, abj = 22;
+  const ahora = Date.now(), desde = ahora - ventanaMs;
+  const i0 = Math.max(0, serie.t.findIndex((t) => t >= desde));
+  const ts = serie.t.slice(i0);
+
+  let y0 = 0, y1 = 1023;
+  if ($('zoomAuto').checked && ts.length > 1) {
+    let mn = Infinity, mx = -Infinity;
+    for (const k of ['n', 'prom', 'kalman']) {
+      if (!visibles[k]) continue;
+      for (const v of serie[k].slice(i0)) { if (v < mn) mn = v; if (v > mx) mx = v; }
+    }
+    if (Number.isFinite(mn)) {
+      const marg = Math.max(8, (mx - mn) * 0.15);
+      y0 = Math.max(0, Math.floor(mn - marg)); y1 = Math.min(1023, Math.ceil(mx + marg));
+      if (y1 - y0 < 20) { const c = (y0 + y1) / 2; y0 = Math.max(0, c - 10); y1 = Math.min(1023, c + 10); }
+    }
+  }
+  const x = (t) => izq + (t - desde) / ventanaMs * (w - izq - der);
+  const y = (v) => arr + (1 - (v - y0) / (y1 - y0)) * (h - arr - abj);
+
+  // Banda de histéresis
+  const a = ultimo.auto.abrir, c = ultimo.auto.cerrar;
+  const ya = y(clamp(a, y0, y1)), yc = y(clamp(c, y0, y1));
+  ctx.fillStyle = colores.card2; ctx.fillRect(izq, yc, w - izq - der, ya - yc);
+
+  // Rejilla y ejes
+  ctx.font = '11px system-ui, sans-serif'; ctx.fillStyle = colores.muted; ctx.strokeStyle = colores.line; ctx.lineWidth = 1;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const pasoY = (y1 - y0) > 600 ? 200 : (y1 - y0) > 250 ? 100 : (y1 - y0) > 100 ? 50 : (y1 - y0) > 40 ? 10 : 5;
+  for (let v = Math.ceil(y0 / pasoY) * pasoY; v <= y1; v += pasoY) {
+    ctx.beginPath(); ctx.moveTo(izq, y(v)); ctx.lineTo(w - der, y(v)); ctx.stroke();
+    ctx.fillText(String(v), izq - 6, y(v));
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const pasoT = ventanaMs > 120000 ? 60000 : 15000;
+  for (let s = 0; s <= ventanaMs; s += pasoT) {
+    const px = x(ahora - s);
+    ctx.fillText(s === 0 ? 'ahora' : `−${s >= 60000 ? s / 60000 + ' min' : s / 1000 + ' s'}`, px, h - abj + 6);
+  }
+
+  // Umbrales
+  ctx.setLineDash([5, 5]); ctx.lineWidth = 1.2;
+  for (const [v, col, txt] of [[a, colores.abre, 'abrir ' + a], [c, colores.cierra, 'cerrar ' + c]]) {
+    if (v < y0 || v > y1) continue;
+    ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(izq, y(v)); ctx.lineTo(w - der, y(v)); ctx.stroke();
+    ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(txt, izq + 6, y(v) - 3);
+  }
+  ctx.setLineDash([]);
+
+  // Series
+  ctx.save();
+  ctx.beginPath(); ctx.rect(izq, arr, w - izq - der, h - arr - abj); ctx.clip();
+  ctx.lineJoin = 'round';
+  const dibujos = [
+    ['n', colores['s-raw'], 1, []],
+    ['prom', colores['s-prom'], 1.6, [6, 4]],
+    ['kalman', colores['s-kal'], 2.6, []],
+  ];
+  for (const [k, col, ancho, guion] of dibujos) {
+    if (!visibles[k]) continue;
+    ctx.strokeStyle = col; ctx.lineWidth = ancho; ctx.setLineDash(guion);
+    trazar(ctx, ts, serie[k].slice(i0), x, y);
+  }
+  ctx.restore();
+}
+
+// =====================================================================
+// Sensor y Kalman
+// =====================================================================
+function numMat(v) {
+  if (!Number.isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a === 0) return '0';
+  if (a >= 1000) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  if (a >= 0.01) return v.toFixed(3);
+  return v.toExponential(1);
+}
+function matriz(id, filas) {
+  const m = crear('div', 'mat');
+  m.style.gridTemplateColumns = `repeat(${filas[0].length}, auto)`;
+  for (const fila of filas) for (const v of fila) m.append(crear('span', '', typeof v === 'number' ? numMat(v) : v));
+  $(id).replaceChildren(m);
+}
+
+function desviacion(arr) {
+  if (arr.length < 3) return NaN;
+  const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+  return Math.sqrt(arr.reduce((a, b) => a + (b - m) ** 2, 0) / (arr.length - 1));
+}
+
+function pintarSensor(e) {
+  const l = e.luz, k = l.k;
+  $('sN').textContent = fmt(+l.n);
+  $('sMv').textContent = fmt(l.mv / 1000, 2) + ' V';
+  $('sProm').textContent = fmt(+l.prom, 1);
+  $('sKal').textContent = fmt(+k.n, 1);
+  $('sVel').textContent = fmt(+k.v, 1);
+  $('sRldr').textContent = textoR(rLdr(+l.n));
+
+  const desde = Date.now() - 10000;
+  const i0 = Math.max(0, serie.t.findIndex((t) => t >= desde));
+  const sr = desviacion(serie.n.slice(i0)), sk = desviacion(serie.kalman.slice(i0));
+  if (!Number.isFinite(sr) || !Number.isFinite(sk) || sk < 0.01) $('sReduccion').textContent = '';
+  else if (sr > 40) $('sReduccion').textContent = 'La luz está cambiando. Con la luz quieta aquí verás cuánto ruido quita el filtro.';
+  else $('sReduccion').textContent = `Últimos 10 s: la lectura cruda varía ±${fmt(sr, 1)} y el Kalman ±${fmt(sk, 1)} (${fmt(sr / sk, 1)}× más estable).`;
+
+  const dt = 0.1, q = +k.q, r = +k.r;
+  matriz('mF', [[1, dt], [0, Math.exp(-dt / 0.7)]]);
+  matriz('mH', [[1, 0]]);
+  matriz('mQ', [[q * dt ** 4 / 4, q * dt ** 3 / 2], [q * dt ** 3 / 2, q * dt ** 2]]);
+  matriz('mR', [[r]]);
+  matriz('mX', [[+k.n], [+k.v]]);
+  matriz('mP', [[+k.p00, +k.p01], [+k.p01, +k.p11]]);
+  matriz('mK', [[+k.k0], [+k.k1]]);
+  matriz('mY', [[+k.y]]);
+
+  $('fuenteKalman').classList.toggle('on', l.fuente === 'kalman');
+  $('fuentePromedio').classList.toggle('on', l.fuente !== 'kalman');
+  if (!filtroSucio) {
+    $('rangoR').value = Math.log10(r); $('valR').textContent = fmt(r, r < 10 ? 2 : 1);
+    $('rangoQ').value = Math.log10(q); $('valQ').textContent = fmt(q, q < 1 ? 3 : q < 10 ? 2 : 1);
+  }
+  $('ruidoCaja').hidden = !l.cal;
+  $('ruidoBarra').style.width = l.calPct + '%';
+  $('btnMedirRuido').disabled = l.cal;
+  dibujarGrafica();
+}
+
+// =====================================================================
+// Horarios
+// =====================================================================
+function pintarReloj(e) {
+  if (!e.hora.valida) {
+    $('relojHora').textContent = '--:--';
+    $('relojTop').textContent = '';
+    $('relojFuente').textContent = 'La cortina no tiene la hora. Sincronízala con este dispositivo.';
+    return;
+  }
+  const local = new Date((e.hora.epoch + e.hora.zona * 60) * 1000);
+  const hm = `${dos(local.getUTCHours())}:${dos(local.getUTCMinutes())}`;
+  $('relojHora').textContent = hm;
+  $('relojTop').textContent = hm;
+  const z = e.hora.zona, signo = z < 0 ? '−' : '+';
+  const fuente = e.hora.fuente === 'internet' ? 'sincronizada por internet' : 'sincronizada desde la app';
+  $('relojFuente').textContent = `${DIAS_LARGOS[local.getUTCDay()]} · UTC${signo}${dos(Math.floor(Math.abs(z) / 60))}:${dos(Math.abs(z) % 60)} · ${fuente}`;
+}
+
+function pintarHorarios() {
+  const cont = $('listaHorarios');
+  cont.replaceChildren();
+  $('sinHorarios').hidden = horarios.length > 0;
+  $('btnNuevoHorario').disabled = horarios.length >= 8;
+  horarios.forEach((h, i) => {
+    const fila = crear('div', 'horario' + (h.activo ? '' : ' off'));
+    fila.append(crear('div', 'hh num', `${dos(h.hora)}:${dos(h.minuto)}`));
+    const info = crear('div', 'info');
+    info.append(crear('div', '', textoAccion(h)));
+    const mini = crear('div', 'dias-mini');
+    for (const d of ORDEN_DIAS) mini.append(crear('span', h.dias & (1 << d) ? 'on' : '', LETRA_DIA[d]));
+    info.append(mini);
+    info.addEventListener('click', () => abrirHorario(i));
+    const sw = crear('label', 'interruptor');
+    const chk = crear('input');
+    chk.type = 'checkbox'; chk.checked = h.activo;
+    chk.setAttribute('aria-label', 'Activar horario');
+    chk.addEventListener('change', async () => {
+      const lista = horarios.map((x) => ({ ...x }));
+      lista[i].activo = chk.checked;
+      await guardarHorarios(lista, chk.checked ? 'Horario activado' : 'Horario desactivado');
+    });
+    sw.append(chk);
+    fila.append(info, sw);
+    cont.append(fila);
+  });
+  if (ultimo) pintarProximo(ultimo);
+}
+
+async function guardarHorarios(lista, mensaje) {
+  try {
+    const r = await disp.guardarHorarios(lista);
+    horarios = r.horarios || [];
+    toast(mensaje);
+  } catch (err) {
+    toast(err.message, true);
+  }
+  pintarHorarios();
+}
+
+let editando = -1;
+function abrirHorario(i) {
+  editando = i;
+  const h = i >= 0 ? horarios[i] : { activo: true, hora: 7, minuto: 0, dias: 62, accion: 0, pct: 50 };
+  $('hTitulo').textContent = i >= 0 ? 'Editar horario' : 'Nuevo horario';
+  $('hHora').value = `${dos(h.hora)}:${dos(h.minuto)}`;
+  $('hAccion').value = String(h.accion);
+  $('hPct').value = h.pct;
+  $('hPctValor').textContent = `${h.pct} % cerrada`;
+  $('hPctFila').hidden = h.accion !== 2;
+  $('hActivo').checked = h.activo;
+  $('hEliminar').hidden = i < 0;
+  const dias = $('hDias');
+  dias.replaceChildren();
+  for (const d of ORDEN_DIAS) {
+    const b = crear('button', h.dias & (1 << d) ? 'on' : '', LETRA_DIA[d]);
+    b.type = 'button';
+    b.dataset.dia = d;
+    b.setAttribute('aria-label', DIAS_LARGOS[d]);
+    b.addEventListener('click', () => b.classList.toggle('on'));
+    dias.append(b);
+  }
+  $('dlgHorario').showModal();
+}
+
+// =====================================================================
+// Ajustes
+// =====================================================================
+function llenarZonas(actual) {
+  const sel = $('aZona');
+  if (sel.options.length === 0) {
+    for (let z = -720; z <= 840; z += 30) {
+      const s = z < 0 ? '−' : '+';
+      sel.append(new Option(`UTC${s}${dos(Math.floor(Math.abs(z) / 60))}:${dos(Math.abs(z) % 60)}${z === -300 ? ' (Colombia)' : ''}`, String(z)));
+    }
+  }
+  if (![...sel.options].some((o) => o.value === String(actual))) sel.append(new Option(`UTC ${actual} min`, String(actual)));
+  sel.value = String(actual);
+}
+
+function llenarAjustes() {
+  const a = ajustesDisp;
+  if (!a) return;
+  if (!sucias.has('general')) { $('aNombre').value = a.nombre; llenarZonas(a.zonaMin); }
+  if (!sucias.has('auto')) {
+    $('aAbrir').value = a.umbralAbrir; $('aCerrar').value = a.umbralCerrar;
+    $('aConfirmar').value = a.confirmarMs / 1000; $('aReanudar').value = a.reanudarMin;
+    actualizarEquivalencias();
+  }
+  if (!sucias.has('motor')) {
+    $('aMsPaso').value = a.msPorPaso; $('aRecorrido').value = a.recorrido;
+    $('aUsarFinales').checked = a.usarFinales; $('aInvertirMotor').checked = a.invertirMotor;
+    $('aInvertirSensor').checked = a.invertirSensor;
+    actualizarVelocidad();
+  }
+  for (const s of ['general', 'auto', 'motor']) if (!sucias.has(s)) marcarSucia(s, false);
+}
+
+function marcarSucia(seccion, sucia) {
+  if (sucia) sucias.add(seccion); else sucias.delete(seccion);
+  const b = document.querySelector(`[data-guardar="${seccion}"]`);
+  if (b) b.disabled = !sucia;
+}
+
+function actualizarEquivalencias() {
+  const a = +$('aAbrir').value, c = +$('aCerrar').value;
+  if (!Number.isFinite(a) || !Number.isFinite(c)) return;
+  $('aEquiv').textContent = `Con R fija de 4,7 kΩ: abrir bajo ${fmt(voltios(a), 2)} V (LDR > ${textoR(rLdr(a))}), cerrar sobre ${fmt(voltios(c), 2)} V (LDR < ${textoR(rLdr(c))}). Banda muerta de ${fmt(voltios(c) - voltios(a), 2)} V.`;
+}
+
+function actualizarVelocidad() {
+  const ms = +$('aMsPaso').value, rec = +$('aRecorrido').value;
+  const rpm = 60000 / (ms * 2048);
+  const seg = rec * ms / 1000;
+  $('aVelTxt').textContent = `${fmt(rpm, 1)} RPM · recorrido completo en ${duracion(seg)}`;
+}
+
+function pasosCalculados() {
+  const d = +$('cDist').value, r = +$('cRadio').value;
+  if (!(d > 0) || !(r > 0)) return NaN;
+  return Math.round(d / (2 * Math.PI * r) * 2048);
+}
+
+function actualizarCalculo() {
+  const d = +$('cDist').value, r = +$('cRadio').value, p = pasosCalculados();
+  $('cResultado').textContent = Number.isFinite(p)
+    ? `P = d / (2πr) · 2048 = ${fmt(d, 1)} / (2π · ${fmt(r, 2)}) · 2048 = ${fmt(p)} pasos (${fmt(d / (2 * Math.PI * r), 2)} vueltas)`
+    : 'Escribe la distancia y el radio.';
+  $('btnUsarCalculo').disabled = !Number.isFinite(p) || p < 100 || p > 200000;
+}
+
+function datosSeccion(s) {
+  if (s === 'general') return { nombre: $('aNombre').value.trim(), zonaMin: +$('aZona').value };
+  if (s === 'auto') {
+    return {
+      umbralAbrir: Math.round(+$('aAbrir').value), umbralCerrar: Math.round(+$('aCerrar').value),
+      confirmarMs: Math.round(+$('aConfirmar').value * 1000), reanudarMin: Math.round(+$('aReanudar').value),
+    };
+  }
+  if (s === 'motor') {
+    return {
+      msPorPaso: +$('aMsPaso').value, recorrido: Math.round(+$('aRecorrido').value),
+      usarFinales: $('aUsarFinales').checked, invertirMotor: $('aInvertirMotor').checked,
+      invertirSensor: $('aInvertirSensor').checked,
+    };
+  }
+  return {};
+}
+
+async function guardarSeccion(s) {
+  const datos = datosSeccion(s);
+  for (const [k, v] of Object.entries(datos)) {
+    if (typeof v === 'number' && !Number.isFinite(v)) { toast(`Revisa el campo ${k}`, true); return; }
+  }
+  try {
+    const r = await disp.guardarAjustes(datos);
+    ajustesDisp = r;
+    marcarSucia(s, false);
+    llenarAjustes();
+    toast('Ajustes guardados');
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+function pintarAjustesEnVivo(e) {
+  const m = e.motor;
+  $('calPos').textContent = `${fmt(m.pos)} / ${fmt(m.rec)} pasos (${e.pct} %)`;
+  $('calFcA').classList.toggle('on', m.fcA);
+  $('calFcC').classList.toggle('on', m.fcC);
+  $('calNotaFc').textContent = m.usarFc
+    ? 'Verde = interruptor presionado. Presiónalos con la mano para probarlos.'
+    : 'Finales de carrera desactivados: la posición se calcula solo contando pasos.';
+  const quieto = m.estado === 'reposo' || m.estado === 'error';
+  $('btnFijarCerrada').disabled = !quieto;
+
+  const r = e.red;
+  $('redAp').textContent = `${r.ap} · ${r.apClientes} conectado${r.apClientes === 1 ? '' : 's'}`;
+  $('redSta').textContent = r.sta ? (r.conectado ? `${r.sta} (${r.rssi} dBm)` : `${r.sta} (sin conexión)`) : 'No configurada';
+  $('redDirecciones').textContent = `Desde su WiFi propio: http://${r.apIp}` + (r.conectado ? ` · Desde la red de la casa: http://${r.staIp} o http://${r.mdns}` : '');
+
+  $('sisVersion').textContent = e.version;
+  $('sisUptime').textContent = duracion(e.uptime);
+  $('sisHeap').textContent = fmt(e.heap / 1024) + ' KB';
+  $('sisPasos').textContent = fmt(m.pasos);
+}
+
+// =====================================================================
+// Interacción
+// =====================================================================
+async function ejecutar(promesa, ok) {
+  try {
+    await promesa;
+    if (ok) toast(ok);
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+function cambiarVista(v) {
+  vistaActual = v;
+  for (const s of document.querySelectorAll('.vista')) s.classList.toggle('activa', s.id === 'v-' + v);
+  for (const t of document.querySelectorAll('.tab')) t.classList.toggle('on', t.dataset.vista === v);
+  window.scrollTo({ top: 0 });
+  if (ultimo) {
+    if (v === 'sensor') pintarSensor(ultimo);
+    if (v === 'ajustes') pintarAjustesEnVivo(ultimo);
+    if (v === 'inicio') dibujarSpark();
+  }
+  try { history.replaceState(null, '', '#' + v); } catch (_) { /* file:// */ }
+}
+
+function conectarInterfaz() {
+  leerColores();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { leerColores(); dibujarSpark(); dibujarGrafica(); });
+  window.addEventListener('resize', () => { dibujarSpark(); dibujarGrafica(); });
+
+  for (const t of document.querySelectorAll('.tab')) t.addEventListener('click', () => cambiarVista(t.dataset.vista));
+  const inicial = location.hash.slice(1);
+  if (['inicio', 'sensor', 'horarios', 'ajustes'].includes(inicial)) cambiarVista(inicial);
+
+  // ---- Inicio ----
+  $('btnAbrir').addEventListener('click', () => ejecutar(disp.comando({ accion: 'abrir' })));
+  $('btnCerrar').addEventListener('click', () => ejecutar(disp.comando({ accion: 'cerrar' })));
+  $('btnParar').addEventListener('click', () => ejecutar(disp.comando({ accion: 'parar' })));
+  $('modoAuto').addEventListener('click', () => ejecutar(disp.comando({ accion: 'auto' }), 'Modo automático'));
+  $('modoManual').addEventListener('click', () => ejecutar(disp.comando({ accion: 'manual' }), 'Modo manual'));
+  const slider = $('sliderPos');
+  slider.addEventListener('input', () => {
+    arrastrandoPos = Date.now() + 2500;
+    $('sliderPosValor').textContent = `${slider.value} % cerrada`;
+  });
+  slider.addEventListener('change', () => {
+    arrastrandoPos = Date.now() + 1500;
+    ejecutar(disp.comando({ accion: 'posicion', pct: +slider.value }));
+  });
+  $('btnReintentarRef').addEventListener('click', () => ejecutar(disp.calibrar({ accion: 'buscar' }), 'Buscando referencia…'));
+  $('btnReconectar').addEventListener('click', () => {
+    const ip = prompt('Dirección IP de la cortina (por ejemplo 192.168.4.1 o 192.168.1.57):', '192.168.4.1');
+    if (ip) location.href = location.pathname + '?dispositivo=' + encodeURIComponent(ip.trim());
+  });
+  $('verRegistro').addEventListener('click', () => { pintarEventos($('listaRegistro'), 120); $('dlgRegistro').showModal(); });
+  $('cerrarRegistro').addEventListener('click', () => $('dlgRegistro').close());
+
+  // ---- Simulador ----
+  const simLuz = $('simLuz');
+  const ponerLuz = (v) => {
+    simLuz.value = v; $('simLuzValor').textContent = v;
+    if (disp instanceof Simulador) disp.luzExterior = +v;
+  };
+  simLuz.addEventListener('input', () => ponerLuz(simLuz.value));
+  for (const b of document.querySelectorAll('[data-luz]')) b.addEventListener('click', () => ponerLuz(b.dataset.luz));
+  $('simSombra').addEventListener('click', () => { if (disp instanceof Simulador) disp.sombraHasta = Date.now() + 500; });
+  $('simNube').addEventListener('click', () => { if (disp instanceof Simulador) disp.nubeHasta = Date.now() + 4000; });
+  $('simRuido').addEventListener('change', () => { if (disp instanceof Simulador) disp.ruido = $('simRuido').checked; });
+
+  // ---- Sensor ----
+  $('ventana1').addEventListener('click', () => { ventanaMs = 60000; $('ventana1').classList.add('on'); $('ventana5').classList.remove('on'); dibujarGrafica(); });
+  $('ventana5').addEventListener('click', () => { ventanaMs = 300000; $('ventana5').classList.add('on'); $('ventana1').classList.remove('on'); dibujarGrafica(); });
+  $('zoomAuto').addEventListener('change', dibujarGrafica);
+  for (const b of document.querySelectorAll('[data-serie]')) {
+    b.addEventListener('click', () => {
+      visibles[b.dataset.serie] = !visibles[b.dataset.serie];
+      b.classList.toggle('off', !visibles[b.dataset.serie]);
+      dibujarGrafica();
+    });
+  }
+  $('fuenteKalman').addEventListener('click', () => ejecutar(disp.guardarAjustes({ filtro: 'kalman' }).then((a) => { ajustesDisp = a; }), 'La automatización usa el filtro de Kalman'));
+  $('fuentePromedio').addEventListener('click', () => ejecutar(disp.guardarAjustes({ filtro: 'promedio' }).then((a) => { ajustesDisp = a; }), 'La automatización usa el promedio de 10 lecturas'));
+  const valorR = () => Math.round(10 ** +$('rangoR').value * 100) / 100;
+  const valorQ = () => Math.round(10 ** +$('rangoQ').value * 1000) / 1000;
+  $('rangoR').addEventListener('input', () => { filtroSucio = true; $('btnGuardarFiltro').disabled = false; $('valR').textContent = fmt(valorR(), valorR() < 10 ? 2 : 1); });
+  $('rangoQ').addEventListener('input', () => { filtroSucio = true; $('btnGuardarFiltro').disabled = false; const q = valorQ(); $('valQ').textContent = fmt(q, q < 1 ? 3 : q < 10 ? 2 : 1); });
+  $('btnGuardarFiltro').addEventListener('click', async () => {
+    try {
+      ajustesDisp = await disp.guardarAjustes({ kalmanR: clamp(valorR(), 0.1, 100000), kalmanQ: clamp(valorQ(), 0.001, 100000) });
+      filtroSucio = false; $('btnGuardarFiltro').disabled = true;
+      toast('Filtro guardado');
+    } catch (err) { toast(err.message, true); }
+  });
+  $('btnMedirRuido').addEventListener('click', () => {
+    filtroSucio = false; $('btnGuardarFiltro').disabled = true;
+    ejecutar(disp.calibrar({ accion: 'ruido' }), 'Midiendo… no muevas la luz durante 5 s');
+  });
+
+  // ---- Horarios ----
+  $('btnSincHora').addEventListener('click', () => sincronizarHora(true));
+  $('btnNuevoHorario').addEventListener('click', () => abrirHorario(-1));
+  $('hAccion').addEventListener('change', () => { $('hPctFila').hidden = $('hAccion').value !== '2'; });
+  $('hPct').addEventListener('input', () => { $('hPctValor').textContent = `${$('hPct').value} % cerrada`; });
+  $('hCancelar').addEventListener('click', () => $('dlgHorario').close());
+  $('hEliminar').addEventListener('click', async () => {
+    if (editando < 0 || !confirm('¿Eliminar este horario?')) return;
+    const lista = horarios.filter((_, i) => i !== editando);
+    $('dlgHorario').close();
+    await guardarHorarios(lista, 'Horario eliminado');
+  });
+  $('formHorario').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const [hh, mm] = ($('hHora').value || '').split(':').map(Number);
+    if (!Number.isInteger(hh) || !Number.isInteger(mm)) { toast('Elige una hora', true); return; }
+    let dias = 0;
+    for (const b of $('hDias').querySelectorAll('button.on')) dias |= 1 << +b.dataset.dia;
+    if (!dias) { toast('Elige al menos un día', true); return; }
+    const h = { activo: $('hActivo').checked, hora: hh, minuto: mm, dias, accion: +$('hAccion').value, pct: +$('hPct').value };
+    const lista = horarios.map((x) => ({ ...x }));
+    if (editando >= 0) lista[editando] = h; else lista.push(h);
+    $('dlgHorario').close();
+    await guardarHorarios(lista, editando >= 0 ? 'Horario actualizado' : 'Horario creado');
+  });
+
+  // ---- Ajustes ----
+  for (const sec of document.querySelectorAll('[data-seccion]')) {
+    const s = sec.dataset.seccion;
+    const marcar = (ev) => { if (ev.target.matches('input, select') && !ev.target.hasAttribute('data-no-sucio')) marcarSucia(s, true); };
+    sec.addEventListener('input', marcar);
+    sec.addEventListener('change', marcar);
+  }
+  for (const b of document.querySelectorAll('[data-guardar]')) b.addEventListener('click', () => guardarSeccion(b.dataset.guardar));
+  $('btnZonaLocal').addEventListener('click', () => {
+    const z = -new Date().getTimezoneOffset();
+    llenarZonas(z);
+    marcarSucia('general', true);
+  });
+  $('aAbrir').addEventListener('input', actualizarEquivalencias);
+  $('aCerrar').addEventListener('input', actualizarEquivalencias);
+  $('aMsPaso').addEventListener('input', actualizarVelocidad);
+  $('aRecorrido').addEventListener('input', actualizarVelocidad);
+  $('cDist').addEventListener('input', actualizarCalculo);
+  $('cRadio').addEventListener('input', actualizarCalculo);
+  actualizarCalculo();
+  $('btnUsarCalculo').addEventListener('click', () => {
+    const p = pasosCalculados();
+    if (!Number.isFinite(p)) return;
+    $('aRecorrido').value = p;
+    marcarSucia('motor', true);
+    actualizarVelocidad();
+    toast('Valor copiado: pulsa Guardar');
+  });
+
+  for (const b of document.querySelectorAll('[data-pasos]')) {
+    b.addEventListener('click', () => ejecutar(disp.calibrar({ accion: 'mover', pasos: +b.dataset.pasos })));
+  }
+  $('btnFijarAbierta').addEventListener('click', () => ejecutar(disp.calibrar({ accion: 'fijarAbierta' }), 'Posición abierta fijada'));
+  $('btnFijarCerrada').addEventListener('click', async () => {
+    try {
+      await disp.calibrar({ accion: 'fijarCerrada' });
+      ajustesDisp = await disp.ajustes();
+      marcarSucia('motor', false);
+      llenarAjustes();
+      toast(`Recorrido fijado en ${fmt(ajustesDisp.recorrido)} pasos`);
+    } catch (err) { toast(err.message, true); }
+  });
+  $('btnBuscarRef').addEventListener('click', () => ejecutar(disp.calibrar({ accion: 'buscar' }), 'Buscando referencia…'));
+
+  // ---- Red ----
+  $('btnEscanear').addEventListener('click', escanearRedes);
+  $('btnConectarWifi').addEventListener('click', async () => {
+    const ssid = $('wifiSsid').value.trim();
+    if (!ssid) { toast('Escribe o elige el nombre de la red', true); return; }
+    await ejecutar(disp.wifi({ ssid, clave: $('wifiClave').value }), `Conectando a "${ssid}"…`);
+    $('wifiClave').value = '';
+  });
+  $('btnOlvidarWifi').addEventListener('click', () => {
+    if (confirm('¿Olvidar la red de la casa? La cortina seguirá con su WiFi propio.')) ejecutar(disp.wifi({ olvidar: true }), 'Red olvidada');
+  });
+  $('btnGuardarAp').addEventListener('click', async () => {
+    const c = $('aApClave').value;
+    if (c.length < 8) { toast('La clave debe tener al menos 8 caracteres', true); return; }
+    if (!confirm('La cortina se reiniciará y tendrás que volver a conectarte a su WiFi con la nueva clave. ¿Continuar?')) return;
+    await ejecutar(disp.guardarAjustes({ apClave: c }), 'Clave cambiada. Reiniciando…');
+    $('aApClave').value = '';
+  });
+
+  // ---- Sistema ----
+  $('otaArchivo').addEventListener('change', () => { $('btnOta').disabled = !$('otaArchivo').files.length; });
+  $('btnOta').addEventListener('click', async () => {
+    const f = $('otaArchivo').files[0];
+    if (!f) return;
+    if (!confirm(`¿Instalar ${f.name}? La cortina se detendrá y se reiniciará.`)) return;
+    $('otaCaja').hidden = false; $('btnOta').disabled = true;
+    try {
+      await disp.ota(f, (p) => { $('otaBarra').style.width = (p * 100) + '%'; });
+      toast('Firmware instalado. Reiniciando…');
+    } catch (err) {
+      toast(err.message, true);
+    }
+    $('btnOta').disabled = false;
+    setTimeout(() => { $('otaCaja').hidden = true; $('otaBarra').style.width = '0'; }, 3000);
+  });
+  $('btnReiniciar').addEventListener('click', () => { if (confirm('¿Reiniciar la cortina?')) ejecutar(disp.reiniciar(), 'Reiniciando…'); });
+  $('btnRestablecer').addEventListener('click', () => {
+    if (confirm('Se borrarán todos los ajustes, horarios y redes guardadas. ¿Continuar?')) ejecutar(disp.restablecer(), 'Restablecida. Reiniciando…');
+  });
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ultimo) recibirEstado(ultimo); });
+}
+
+let escaneando = false;
+async function escanearRedes() {
+  if (escaneando) return;
+  escaneando = true;
+  const btn = $('btnEscanear'), lista = $('listaRedes');
+  btn.disabled = true; btn.textContent = 'Buscando…';
+  lista.replaceChildren();
+  try {
+    let r = null;
+    for (let i = 0; i < 12; i++) {
+      r = await disp.redes();
+      if (!r.escaneando) break;
+      await new Promise((ok) => setTimeout(ok, 1200));
+    }
+    const redes = (r && r.redes) || [];
+    redes.sort((a, b) => b.rssi - a.rssi);
+    const vistas = new Set();
+    for (const red of redes) {
+      if (vistas.has(red.ssid)) continue;
+      vistas.add(red.ssid);
+      const li = crear('li'), b = crear('button');
+      b.type = 'button';
+      const barras = red.rssi > -55 ? '▂▄▆█' : red.rssi > -67 ? '▂▄▆' : red.rssi > -78 ? '▂▄' : '▂';
+      b.append(crear('span', '', (red.segura ? '🔒 ' : '') + red.ssid), crear('span', 'mut num', barras));
+      b.addEventListener('click', () => {
+        $('wifiSsid').value = red.ssid;
+        for (const x of lista.querySelectorAll('button')) x.classList.remove('on');
+        b.classList.add('on');
+        $('wifiClave').focus();
+      });
+      li.append(b);
+      lista.append(li);
+    }
+    if (!vistas.size) lista.append(crear('li', 'vacio', 'No se encontraron redes.'));
+  } catch (err) {
+    toast(err.message, true);
+  }
+  btn.disabled = false; btn.textContent = 'Buscar redes';
+  escaneando = false;
+}
+
+iniciar();
+</script>
+</body>
+</html>

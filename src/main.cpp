@@ -1,161 +1,116 @@
 /*
- * Simulador de cortinas automáticas con ESP32
- * --------------------------------------------
- * Sensor de luz: módulo MH-Sensor-Series (fotorresistencia/LDR + LM393).
- * Cableado del módulo (letras impresas de izquierda a derecha):
- *   AO -> D34   |   DO -> sin conectar   |   GND -> GND   |   VCC -> 3V3
+ * Cortina inteligente con ESP32
+ * ==============================
+ * Sensor:     LDR GL5516 en divisor de tensión con 4,7 kΩ  -> GPIO 34
+ * Actuador:   motor paso a paso 28BYJ-48 + driver ULN2003  -> GPIO 16, 17, 18, 19
+ * Topes:      finales de carrera (abierta / cerrada)        -> GPIO 32 / 33
+ * Filtro:     Kalman de 2 estados (nivel de luz y velocidad de cambio)
+ * Control:    histéresis 320 / 620 (escala 0-1023), igual que el informe
+ * App:        servida por el propio ESP32 (WiFi "Cortina-XXXX" -> 192.168.4.1)
  *
- * La cortina se mueve de forma GRADUAL y proporcional a la cantidad de luz:
- * con poca luz queda abierta, con mucha luz queda cerrada, y con valores
- * intermedios (por ejemplo la linterna de un celular desde lejos o en
- * ángulo) queda parcialmente cerrada. No es un interruptor de todo o nada.
- *
- * La cortina se representa con un servo (SG90) y el LED de la placa se
- * enciende cuando está más cerrada que abierta (pasado el punto medio).
- *
- * Nota sobre los lux: este módulo es una fotorresistencia genérica sin hoja
- * de datos exacta, así que el valor de lux es una ESTIMACIÓN (orden de
- * magnitud), calculada con la curva típica de una GL5528. No es una medición
- * calibrada; para lux precisos se necesitaría un sensor digital (p. ej.
- * BH1750). Aun así sirve de sobra para este simulador.
+ * Módulos:
+ *   config.h     pines y valores por defecto
+ *   ajustes.*    ajustes guardados en la flash
+ *   kalman.h     filtro de Kalman (álgebra matricial 2x2)
+ *   luz.*        lectura del sensor, promedio y Kalman
+ *   motor.*      tarea del motor paso a paso y finales de carrera
+ *   control.*    modos, histéresis, horarios, eventos, botón y LED
+ *   red.*        WiFi, servidor web y API de la app
  */
 
 #include <Arduino.h>
-#include <math.h>
-#include <ESP32Servo.h>
+#include "ajustes.h"
+#include "config.h"
+#include "control.h"
+#include "luz.h"
+#include "motor.h"
+#include "red.h"
 
-// ---------------- Pines ----------------
-const int PIN_SENSOR = 34;  // AO del módulo de luz (debe ser un pin ADC1: 32-39)
-const int PIN_SERVO  = 18;  // Señal del servo
-const int PIN_LED    = 2;   // LED integrado del ESP32 DevKit
+static uint32_t ultimoReporte = 0;
+static String lineaSerie;
 
-// ------------- Modelo del sensor (estimación de lux) -------------
-// El módulo forma un divisor de voltaje: VCC -> R_FIJO -> (AO) -> LDR -> GND.
-// R_FIJO_KOHM es el valor típico de la resistencia fija del módulo (10kΩ en
-// la mayoría de estos módulos LM393). Si el rango de lux se ve muy
-// desviado de la realidad, ajusta este valor.
-const float R_FIJO_KOHM = 10.0;
+static void imprimirAyuda() {
+  Serial.println();
+  Serial.println("Comandos por el monitor serie:");
+  Serial.println("  abrir | cerrar | parar | ir <0-100> | auto | manual");
+  Serial.println("  buscar      busca el final de carrera de abierta");
+  Serial.println("  red         muestra como entrar a la app");
+  Serial.println("  ayuda");
+  Serial.println();
+}
 
-// Curva aproximada de una fotorresistencia GL5528: R(kΩ) ≈ 32 * lux^-0.7
-const float LDR_COEF  = 32.0;
-const float LDR_GAMMA = 0.7;
+static void procesarComando(String c) {
+  c.trim();
+  c.toLowerCase();
+  if (c.isEmpty()) return;
+  if (c == "abrir") accionAbrir("serie");
+  else if (c == "cerrar") accionCerrar("serie");
+  else if (c == "parar") accionParar("serie");
+  else if (c == "auto") accionModo(MODO_AUTO, "serie");
+  else if (c == "manual") accionModo(MODO_MANUAL, "serie");
+  else if (c == "buscar") {
+    accionModo(MODO_MANUAL, "serie");
+    motorBuscarOrigen();
+  } else if (c.startsWith("ir ")) accionPosicion(c.substring(3).toInt(), "serie");
+  else if (c == "red" || c == "ip") redImprimirEstado();
+  else imprimirAyuda();
+}
 
-// ------------- Rango de lux para la posición de la cortina -------------
-// Entre estos dos valores la cortina se mueve GRADUALMENTE, en proporción
-// directa a los lux medidos. Pensado para probar con la linterna de un
-// celular desde distintas distancias, ángulos e intensidades: mientras más
-// cerca y directo apunte, más se cierra; de lejos o en ángulo, se cierra
-// solo un poco.
-//   LUX_ABIERTA: en este nivel de lux (o menos) la cortina queda 100% abierta.
-//   LUX_CERRADA: en este nivel de lux (o más) la cortina queda 100% cerrada.
-// Si notas que cualquier lucecita ya cierra la cortina del todo, sube
-// LUX_CERRADA. Revisa los lux reales de tu cuarto en el Monitor Serie o en
-// el panel localhost:8080 antes de ajustar.
-const float LUX_ABIERTA = 80.0;
-const float LUX_CERRADA = 9000.0;  // la linterna de un iPhone al máximo y cerca dio ~10.2k lux
-
-// ------------- Servo -------------
-const int ANGULO_SUBIDA = 0;
-const int ANGULO_BAJADA = 180;
-const int MS_POR_GRADO  = 15;   // velocidad del movimiento (más alto = más lento)
-
-const unsigned long INTERVALO_LECTURA_MS = 500;
-
-// ------------- Suavizado -------------
-// La curva de la fotorresistencia amplifica mucho el ruido al pasarlo a lux,
-// y sin suavizar el ángulo objetivo salta varias veces por segundo. Se
-// corrige con un suavizado exponencial aplicado DESPUÉS del sensor: en vez de
-// saltar directo al nuevo lux cada INTERVALO_LECTURA_MS, el valor suavizado
-// avanza solo una fracción FACTOR_SUAVIZADO hacia él.
-//   - Más bajo (0.05-0.1): más estable, pero tarda más en reaccionar.
-//   - Más alto (0.3-0.5): reacciona rápido, pero con más temblor.
-// No toca la lectura del sensor ni la conversión a lux; solo filtra el
-// resultado antes de decidir el ángulo. El "lux" que se imprime es este
-// valor suavizado, que es el que realmente mueve la cortina.
-const float FACTOR_SUAVIZADO = 0.2;
-
-int anguloActual;
-int anguloObjetivo;
-float luxSuavizado;
-unsigned long ultimoPasoServo = 0;
-unsigned long ultimaLectura = 0;
-
-Servo servo;
-
-int leerSensorPromedio() {
-  long suma = 0;
-  for (int i = 0; i < 10; i++) {
-    suma += analogRead(PIN_SENSOR);
-    delay(2);
+static void leerSerie() {
+  while (Serial.available()) {
+    const char ch = (char)Serial.read();
+    if (ch == '\n' || ch == '\r') {
+      procesarComando(lineaSerie);
+      lineaSerie = "";
+    } else if (lineaSerie.length() < 40) {
+      lineaSerie += ch;
+    }
   }
-  return suma / 10;
 }
 
-// Convierte la lectura cruda del ADC (0-4095) a una estimación de lux.
-float calcularLux(int raw) {
-  float relacion = constrain(raw, 1, 4094) / 4095.0;  // evita 0% y 100% exactos
-  float rLdrKohm = R_FIJO_KOHM * relacion / (1.0 - relacion);
-  if (rLdrKohm < 0.05) rLdrKohm = 0.05;  // evita valores irreales cerca de 0
-  return pow(LDR_COEF / rLdrKohm, 1.0 / LDR_GAMMA);
-}
-
-// Traduce los lux a un ángulo de servo, interpolando linealmente entre
-// LUX_ABIERTA (0°) y LUX_CERRADA (180°). Esto es lo que hace que el cierre
-// sea gradual en vez de un interruptor todo-o-nada.
-int calcularAnguloObjetivo(float lux) {
-  float acotado = constrain(lux, LUX_ABIERTA, LUX_CERRADA);
-  float fraccion = (acotado - LUX_ABIERTA) / (LUX_CERRADA - LUX_ABIERTA);
-  return (int)round(ANGULO_SUBIDA + fraccion * (ANGULO_BAJADA - ANGULO_SUBIDA));
-}
-
-// Mueve el servo un grado cada MS_POR_GRADO sin bloquear el loop.
-void moverServoSuave() {
-  if (anguloActual == anguloObjetivo) return;
-  if (millis() - ultimoPasoServo < MS_POR_GRADO) return;
-  ultimoPasoServo = millis();
-  anguloActual += (anguloObjetivo > anguloActual) ? 1 : -1;
-  servo.write(anguloActual);
-  digitalWrite(PIN_LED, anguloActual > 90 ? HIGH : LOW);
+static void reportar() {
+  const InfoLuz& l = luzInfo();
+  const InfoMotor m = motorInfo();
+  Serial.printf("N: %4.0f | prom: %6.1f | kalman: %6.1f | pos: %3d%% (%ld/%ld) | %s | %s\n",
+                l.n, l.promedio, l.kalman.n, controlPorcentaje(), (long)m.pos, (long)m.recorrido,
+                controlEstadoCortina(), controlModo() == MODO_AUTO ? "AUTO" : "MANUAL");
 }
 
 void setup() {
   Serial.begin(115200);
-  pinMode(PIN_LED, OUTPUT);
-  analogReadResolution(12);  // 0 - 4095
+  delay(200);
+  Serial.println();
+  Serial.println("==== Cortina inteligente v" VERSION_FIRMWARE " ====");
 
-  ESP32PWM::allocateTimer(0);
-  servo.setPeriodHertz(50);
-  servo.attach(PIN_SERVO, 500, 2400);
+  cargarAjustes();
+  controlIniciar();
+  luzIniciar();
+  motorIniciar();
+  motorConfigurar(ajustes.recorrido, ajustes.msPorPaso, ajustes.invertirMotor, ajustes.usarFinales);
+  redIniciar();
 
-  // Posición inicial según la primera lectura, sin animación. El suavizado
-  // arranca desde esa misma lectura para no empezar desde cero.
-  luxSuavizado = calcularLux(leerSensorPromedio());
-  anguloObjetivo = calcularAnguloObjetivo(luxSuavizado);
-  anguloActual = anguloObjetivo;
-  servo.write(anguloActual);
-  digitalWrite(PIN_LED, anguloActual > 90 ? HIGH : LOW);
+  // Referencia inicial, como en el informe: abrir hasta el final de carrera.
+  // Sin finales de carrera se asume que la cortina arranca abierta.
+  motorBuscarOrigen();
+  if (ajustes.usarFinales) {
+    registrarEvento(EV_INFO, "Inicio: abriendo hasta el final de carrera para tomar referencia");
+  } else {
+    registrarEvento(EV_ALERTA, "Inicio sin finales de carrera: se asume que la cortina está abierta");
+  }
 
-  Serial.println("Simulador de cortinas listo.");
+  redImprimirEstado();
+  imprimirAyuda();
 }
 
 void loop() {
-  moverServoSuave();
+  redActualizar();
+  const bool nueva = luzActualizar();
+  controlActualizar(nueva);
+  leerSerie();
 
-  if (millis() - ultimaLectura < INTERVALO_LECTURA_MS) return;
-  ultimaLectura = millis();
-
-  int raw = leerSensorPromedio();
-  float lux = calcularLux(raw);
-  luxSuavizado += FACTOR_SUAVIZADO * (lux - luxSuavizado);
-  int nuevoObjetivo = calcularAnguloObjetivo(luxSuavizado);
-
-  if (nuevoObjetivo == ANGULO_BAJADA && anguloObjetivo != ANGULO_BAJADA) {
-    Serial.println(">>> Llega al tope de lux: cortina 100% cerrada");
-  } else if (nuevoObjetivo == ANGULO_SUBIDA && anguloObjetivo != ANGULO_SUBIDA) {
-    Serial.println(">>> Baja del piso de lux: cortina 100% abierta");
+  if (millis() - ultimoReporte >= 1000) {
+    ultimoReporte = millis();
+    reportar();
   }
-  anguloObjetivo = nuevoObjetivo;
-
-  Serial.printf("raw: %4d | lux: %7.1f | cortina: %s (%d°)\n",
-                raw, luxSuavizado, anguloActual > 90 ? "ABAJO " : "ARRIBA", anguloActual);
+  delay(1);  // cede el núcleo a otras tareas
 }

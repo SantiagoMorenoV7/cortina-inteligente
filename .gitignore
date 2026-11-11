@@ -1,3 +1,4 @@
 .pio/
 .vscode/
 esptool.cfg
+src/app_web.h
