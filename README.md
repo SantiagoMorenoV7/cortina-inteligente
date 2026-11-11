@@ -14,6 +14,12 @@ mejoras: un **filtro de Kalman** sobre la lectura de luz y la app.
            WiFi "Cortina-XXXX"  ──►  app en http://192.168.4.1
 ```
 
+**Pruébala en línea:** https://santiagomorenov7.github.io/cortina-inteligente/
+(en internet funciona en modo demostración, con un simulador que usa la misma
+lógica del ESP32; para controlar la cortina real hay que abrir la app que
+sirve la propia placa en http://192.168.4.1). Se actualiza sola con cada
+`git push` que cambie la carpeta `app/`.
+
 ## Instalar en cualquier PC (un solo comando)
 
 Conecta el ESP32 por USB, abre **PowerShell** y pega:
